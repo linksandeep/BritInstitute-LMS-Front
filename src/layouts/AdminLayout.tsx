@@ -10,6 +10,7 @@ const navItems = [
   { icon: '🎥', label: 'Live Classes', path: '/admin/live-classes' },
   { icon: '🎬', label: 'Recorded',    path: '/admin/recorded' },
   { icon: '📝', label: 'Assignments', path: '/admin/assignments' },
+  { icon: '🗓️', label: 'Appointments', path: '/admin/appointments' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

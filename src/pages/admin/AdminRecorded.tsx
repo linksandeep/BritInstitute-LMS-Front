@@ -8,10 +8,10 @@ interface Lecture {
 }
 
 const typeLabels: Record<string, { label: string; icon: string }> = {
-  youtube: { label: 'YouTube', icon: '▶️' },
-  drive:   { label: 'Google Drive', icon: '📁' },
-  zoom:    { label: 'Zoom Recording', icon: '🎥' },
-  other:   { label: 'Other', icon: '🔗' },
+  youtube:     { label: 'YouTube', icon: '▶️' },
+  drive:       { label: 'Google Drive', icon: '📁' },
+  google_meet: { icon: '🎥', label: 'Meet Recording' },
+  other:       { label: 'Other', icon: '🔗' },
 };
 
 export default function AdminRecorded() {
@@ -75,7 +75,7 @@ export default function AdminRecorded() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Recorded Lectures</h1>
-          <p className="page-subtitle">Add YouTube, Drive or Zoom recording links scoped by Batch</p>
+          <p className="page-subtitle">Add YouTube, Drive or Meeting recording links scoped by Batch</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Add Lecture</button>
       </div>
@@ -144,7 +144,7 @@ export default function AdminRecorded() {
                 <select className="form-select" value={form.videoType} onChange={e => setForm(f => ({ ...f, videoType: e.target.value }))}>
                   <option value="youtube">▶️ YouTube</option>
                   <option value="drive">📁 Google Drive</option>
-                  <option value="zoom">🎥 Zoom Recording</option>
+                  <option value="google_meet">🎥 Meet Recording</option>
                   <option value="other">🔗 Other</option>
                 </select>
               </div>

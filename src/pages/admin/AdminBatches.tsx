@@ -14,7 +14,15 @@ interface Batch {
   endDate?: string;
 }
 
-type ModalMode = 'create' | 'edit' | 'students' | null;
+interface StudentReport {
+  student: { name: string; username: string };
+  batchName: string;
+  courseName: string;
+  attendance: any[];
+  videoProgress: any[];
+}
+
+type ModalMode = 'create' | 'edit' | 'students' | 'details' | null;
 
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 const toInput = (d?: string) => d ? new Date(d).toISOString().slice(0, 10) : '';
@@ -26,6 +34,9 @@ export default function AdminBatches() {
   const [loading,  setLoading]  = useState(true);
   const [modal,    setModal]    = useState<ModalMode>(null);
   const [selected, setSelected] = useState<Batch | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [report, setReport] = useState<StudentReport | null>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState('');
   const [addStudentId, setAddStudentId] = useState('');
@@ -79,7 +90,29 @@ export default function AdminBatches() {
     setModal('students');
   };
 
-  const closeModal = () => { setModal(null); setSelected(null); setError(''); };
+  const openDetails = async (b: Batch, s: Student) => {
+    setSelected(b);
+    setSelectedStudent(s);
+    setModal('details');
+    setLoadingReport(true);
+    setError('');
+    try {
+      const res = await batchApi.getStudentReport(b._id, s._id);
+      setReport(res.data.report);
+    } catch (err) {
+      setError('Failed to load student report');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const closeModal = () => { 
+    setModal(null); 
+    setSelected(null); 
+    setSelectedStudent(null);
+    setReport(null);
+    setError(''); 
+  };
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -235,10 +268,14 @@ export default function AdminBatches() {
               {b.students.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
                   {b.students.slice(0, 5).map(s => (
-                    <span key={s._id} style={{
-                      background: 'var(--accent-light)', color: 'var(--accent)', padding: '3px 9px',
-                      borderRadius: '20px', fontSize: '12px', fontWeight: '500',
-                    }}>
+                    <span 
+                      key={s._id} 
+                      onClick={() => openDetails(b, s)}
+                      style={{
+                        background: 'var(--accent-light)', color: 'var(--accent)', padding: '3px 9px',
+                        borderRadius: '20px', fontSize: '12px', fontWeight: '500', cursor: 'pointer'
+                      }}
+                    >
                       {s.name}
                     </span>
                   ))}
@@ -421,7 +458,10 @@ export default function AdminBatches() {
                         }}>
                           {s.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
+                        <div 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => openDetails(selected, s)}
+                        >
                           <div style={{ fontSize: '14px', fontWeight: '600' }}>{s.name}</div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{s.username}</div>
                         </div>
@@ -442,6 +482,110 @@ export default function AdminBatches() {
             <div className="modal-actions" style={{ marginTop: '20px' }}>
               <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={closeModal}>
                 ✓ Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Student Details / Report Modal ── */}
+      {modal === 'details' && selected && selectedStudent && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
+          <div className="modal" style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <div>
+                <h2>📊 Student Progress Report</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  {selectedStudent.name} (@{selectedStudent.username}) — <span style={{ color: 'var(--accent)' }}>{selected.name}</span>
+                </p>
+              </div>
+              <button className="modal-close" onClick={closeModal}>✕</button>
+            </div>
+
+            {loadingReport ? (
+              <div style={{ padding: '60px', textAlign: 'center' }}>
+                <div className="spinner" style={{ margin: '0 auto 16px' }} />
+                <p style={{ color: 'var(--text-muted)' }}>Generating report...</p>
+              </div>
+            ) : error ? (
+              <div className="alert alert-error">⚠️ {error}</div>
+            ) : report ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Attendance Section */}
+                <section>
+                  <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    📅 Live Class Attendance
+                  </h3>
+                  {report.attendance.length === 0 ? (
+                    <div className="card" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                      No attendance records found for this student.
+                    </div>
+                  ) : (
+                    <div className="table-wrapper" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      <table style={{ fontSize: '13px' }}>
+                        <thead>
+                          <tr>
+                            <th>Class</th>
+                            <th>Topic</th>
+                            <th>Status</th>
+                            <th>Marked At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.attendance.map((a: any) => (
+                            <tr key={a._id}>
+                              <td>{a.liveClass.classNumber}</td>
+                              <td>{a.liveClass.topic}</td>
+                              <td>
+                                <span className={`badge ${a.status === 'present' ? 'badge-present' : 'badge-absent'}`}>
+                                  {a.status.toUpperCase()}
+                                </span>
+                              </td>
+                              <td>{fmt(a.markedAt)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+
+                {/* Recorded Lectures Progress */}
+                <section>
+                  <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🎬 Video Lecture Progress
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                    {report.videoProgress.map((v: any, idx: number) => (
+                      <div key={idx} className="card" style={{ padding: '12px', background: v.isCompleted ? 'rgba(16,185,129,0.05)' : 'var(--bg-primary)' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {v.lectureTitle}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                             {Math.floor(v.watchDuration / 60)}m / 10m
+                           </span>
+                           {v.isCompleted && <span style={{ color: 'var(--success)', fontSize: '14px' }}>✅</span>}
+                        </div>
+                        <div style={{ height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
+                           <div 
+                              style={{ 
+                                height: '100%', 
+                                width: `${Math.min(100, (v.watchDuration / 600) * 100)}%`, 
+                                background: v.isCompleted ? 'var(--success)' : 'var(--accent)'
+                              }} 
+                           />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            ) : null}
+
+            <div className="modal-actions" style={{ marginTop: '24px' }}>
+              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={closeModal}>
+                Close Report
               </button>
             </div>
           </div>

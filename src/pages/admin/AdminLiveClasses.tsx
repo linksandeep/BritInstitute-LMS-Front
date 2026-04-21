@@ -3,7 +3,7 @@ import { batchApi, liveClassApi } from '../../api';
 
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface LiveClass {
-  _id: string; classNumber: string; topic: string; zoomLink: string;
+  _id: string; classNumber: string; topic: string; meetingLink: string;
   scheduledAt: string; duration: number; status: string;
   batch: Batch;
 }
@@ -14,7 +14,7 @@ export default function AdminLiveClasses() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editClass, setEditClass] = useState<LiveClass | null>(null);
-  const [form, setForm] = useState({ batch: '', classNumber: '', topic: '', zoomLink: '', scheduledAt: '', duration: '60' });
+  const [form, setForm] = useState({ batch: '', classNumber: '', topic: '', meetingLink: '', scheduledAt: '', duration: '60' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -30,24 +30,24 @@ export default function AdminLiveClasses() {
 
   const openCreate = () => {
     setEditClass(null);
-    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', zoomLink: '', scheduledAt: '', duration: '60' });
+    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', meetingLink: '', scheduledAt: '', duration: '60' });
     setError(''); setShowModal(true);
   };
 
   const openEdit = (c: LiveClass) => {
     setEditClass(c);
     const localDT = new Date(c.scheduledAt).toISOString().slice(0, 16);
-    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, zoomLink: c.zoomLink, scheduledAt: localDT, duration: String(c.duration) });
+    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, meetingLink: c.meetingLink, scheduledAt: localDT, duration: String(c.duration) });
     setError(''); setShowModal(true);
   };
 
   const handleSave = async () => {
     setError('');
-    const { batch, classNumber, topic, zoomLink, scheduledAt, duration } = form;
-    if (!batch || !classNumber || !topic || !zoomLink || !scheduledAt) { setError('All fields are required'); return; }
+    const { batch, classNumber, topic, meetingLink, scheduledAt, duration } = form;
+    if (!batch || !classNumber || !topic || !meetingLink || !scheduledAt) { setError('All fields are required'); return; }
     setSaving(true);
     try {
-      const payload = { batch, classNumber, topic, zoomLink, scheduledAt: new Date(scheduledAt).toISOString(), duration: Number(duration) };
+      const payload = { batch, classNumber, topic, meetingLink, scheduledAt: new Date(scheduledAt).toISOString(), duration: Number(duration) };
       if (editClass) await liveClassApi.update(editClass._id, payload);
       else await liveClassApi.create(payload);
       await fetchAll();
@@ -73,7 +73,7 @@ export default function AdminLiveClasses() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Live Classes</h1>
-          <p className="page-subtitle">Manage Zoom sessions scoped by Batch</p>
+          <p className="page-subtitle">Manage Google Meet sessions scoped by Batch</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Schedule Class</button>
       </div>
@@ -89,7 +89,7 @@ export default function AdminLiveClasses() {
               <th>Scheduled At</th>
               <th>Duration</th>
               <th>Status</th>
-              <th>Zoom Link</th>
+              <th>Meet Link</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -106,9 +106,9 @@ export default function AdminLiveClasses() {
                 <td style={{ color: 'var(--text-muted)' }}>{cls.duration}m</td>
                 <td><span className={`badge ${statusColor[cls.status] || 'badge-ended'}`}>{cls.status}</span></td>
                 <td>
-                  <a href={cls.zoomLink} target="_blank" rel="noreferrer"
+                  <a href={cls.meetingLink} target="_blank" rel="noreferrer"
                     style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
-                    🔗 Open
+                    🔗 Open Meet
                   </a>
                 </td>
                 <td>
@@ -149,8 +149,8 @@ export default function AdminLiveClasses() {
               <input className="form-input" placeholder="What will be taught?" value={form.topic} onChange={e => setForm(f => ({ ...f, topic: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Zoom Meeting Link</label>
-              <input className="form-input" placeholder="https://zoom.us/j/..." value={form.zoomLink} onChange={e => setForm(f => ({ ...f, zoomLink: e.target.value }))} />
+              <label className="form-label">Google Meet Link</label>
+              <input className="form-input" placeholder="https://meet.google.com/..." value={form.meetingLink} onChange={e => setForm(f => ({ ...f, meetingLink: e.target.value }))} />
             </div>
             <div className="grid-2">
               <div className="form-group">
