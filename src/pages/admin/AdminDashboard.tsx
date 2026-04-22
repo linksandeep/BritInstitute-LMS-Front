@@ -37,36 +37,62 @@ export default function AdminDashboard() {
   );
 
   const statCards = [
-    { icon: '👥', label: 'Total Students', value: stats.totalStudents, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-    { icon: '🗂️', label: 'Total Batches',  value: stats.totalBatches,  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-    { icon: '📚', label: 'Total Courses',  value: stats.totalCourses,  color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-    { icon: '🎥', label: 'Upcoming Classes', value: upcomingClasses.length, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+    { icon: '👥', label: 'Total Students', value: stats.totalStudents, color: '#1d4ed8', bg: 'rgba(29,78,216,0.08)', help: 'Active learner records' },
+    { icon: '🗂️', label: 'Total Batches',  value: stats.totalBatches,  color: '#d97706', bg: 'rgba(217,119,6,0.08)', help: 'Program delivery groups' },
+    { icon: '📚', label: 'Total Courses',  value: stats.totalCourses,  color: '#059669', bg: 'rgba(5,150,105,0.08)', help: 'Published learning tracks' },
+    { icon: '🎥', label: 'Upcoming Classes', value: upcomingClasses.length, color: '#0284c7', bg: 'rgba(2,132,199,0.08)', help: 'Scheduled live sessions' },
   ];
 
   return (
     <div className="fade-in">
-      {/* Welcome */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 className="page-title">Welcome back, {user?.name}!</h1>
-        <p className="page-subtitle">Here's what's happening at Brit Institute today.</p>
+      <div className="card surface-hero" style={{ padding: '30px', marginBottom: '28px' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              Admin Overview
+            </div>
+            <h1 style={{ fontSize: '34px', lineHeight: 1.1, fontWeight: 800, color: 'var(--text-primary)', marginBottom: '10px' }}>
+              Welcome back, {user?.name}!
+            </h1>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '720px' }}>
+              Here is the current operating snapshot for Brit Institute, including learner volume, active batches, and upcoming live sessions.
+            </p>
+          </div>
+
+          <div className="soft-panel" style={{ padding: '16px 18px', minWidth: '220px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+              Today
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+              {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Admin workspace is ready for batch and curriculum operations.
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
       <div className="grid-4" style={{ marginBottom: '32px' }}>
         {statCards.map((s, i) => (
-          <div key={i} className="stat-card">
+          <div key={i} className="stat-card" style={{ alignItems: 'flex-start' }}>
             <div className="stat-icon" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="stat-value">{Number(s.value).toLocaleString()}</div>
               <div className="stat-label">{s.label}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{s.help}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick actions */}
-      <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>Quick Actions</h2>
+      <div className="card section-shell" style={{ marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ fontSize: '19px', fontWeight: '800', marginBottom: '4px', color: 'var(--text-primary)' }}>Quick Actions</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Jump straight into common admin tasks.</p>
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {[
             { label: '+ Add Student', path: '/admin/users', emoji: '👤' },
@@ -83,15 +109,23 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Upcoming classes */}
-      <div>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>Upcoming Live Classes</h2>
+      <div className="card section-shell">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ fontSize: '19px', fontWeight: '800', marginBottom: '4px', color: 'var(--text-primary)' }}>Upcoming Live Classes</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>The next scheduled classes across your active operations.</p>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/admin/live-classes')}>
+            Open Live Classes
+          </button>
+        </div>
         {upcomingClasses.length === 0 ? (
-          <div className="card">
-            <div className="empty-state">
-              <div className="empty-icon">📅</div>
-              <p>No upcoming classes scheduled. <button className="btn btn-primary btn-sm" style={{ marginLeft: '10px' }} onClick={() => navigate('/admin/live-classes')}>Schedule Now</button></p>
-            </div>
+          <div className="empty-state">
+            <div className="empty-icon">📅</div>
+            <p>No upcoming classes scheduled.</p>
+            <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => navigate('/admin/live-classes')}>
+              Schedule Now
+            </button>
           </div>
         ) : (
           <div className="table-wrapper">

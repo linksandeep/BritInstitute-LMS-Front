@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { batchApi, adminApi } from '../../api';
+import AdminCurriculumModal from './AdminCurriculumModal';
 
 interface Course  { _id: string; title: string; description: string }
 interface Student { _id: string; name: string; username: string; isActive: boolean }
@@ -22,7 +23,7 @@ interface StudentReport {
   videoProgress: any[];
 }
 
-type ModalMode = 'create' | 'edit' | 'students' | 'details' | null;
+type ModalMode = 'create' | 'edit' | 'students' | 'details' | 'curriculum' | null;
 
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 const toInput = (d?: string) => d ? new Date(d).toISOString().slice(0, 10) : '';
@@ -112,6 +113,11 @@ export default function AdminBatches() {
     setSelectedStudent(null);
     setReport(null);
     setError(''); 
+  };
+
+  const openCurriculum = (b: Batch) => {
+    setSelected(b);
+    setModal('curriculum');
   };
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
@@ -289,6 +295,7 @@ export default function AdminBatches() {
 
               {/* Actions */}
               <div className="actions-row">
+                <button className="btn btn-primary btn-sm" onClick={() => openCurriculum(b)}>📚 Curriculum</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => openEdit(b)}>✏️ Edit</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => handleToggleActive(b)}>
                   {b.isActive ? '🔒 Deactivate' : '🔓 Activate'}
@@ -590,6 +597,14 @@ export default function AdminBatches() {
             </div>
           </div>
         </div>
+      )}
+
+      {modal === 'curriculum' && selected && (
+        <AdminCurriculumModal
+          batchId={selected._id}
+          batchName={selected.name}
+          onClose={closeModal}
+        />
       )}
     </div>
   );

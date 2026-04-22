@@ -97,4 +97,12 @@ export const sessionApi = {
   adminUpdate: (id: string, data: object) => api.patch(`/sessions/admin/${id}`, data),
 };
 
+export const curriculumApi = {
+  getDefaults: () => api.get('/curriculums/defaults'),
+  getByBatch: (batchId: string) => api.get(`/curriculums/batch/${batchId}`),
+  assignTemplate: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}/assign-template`, data),
+  updateByBatch: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}`, data),
+  getMine: () => api.get('/curriculums/me'),
+};
+
 export default api;

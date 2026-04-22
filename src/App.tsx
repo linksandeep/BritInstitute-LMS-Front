@@ -16,6 +16,7 @@ import AdminRecorded from './pages/admin/AdminRecorded';
 import AdminAssignments from './pages/admin/AdminAssignments';
 import AdminBatches from './pages/admin/AdminBatches';
 import AdminAppointments from './pages/admin/AdminAppointments';
+import AdminCurriculum from './pages/admin/AdminCurriculum';
 
 // Route guard
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
@@ -70,6 +71,9 @@ function AppRoutes() {
       } />
       <Route path="/admin/batches" element={
         <ProtectedRoute role="admin"><AdminLayout><AdminBatches /></AdminLayout></ProtectedRoute>
+      } />
+      <Route path="/admin/curriculum" element={
+        <ProtectedRoute role="admin"><AdminLayout><AdminCurriculum /></AdminLayout></ProtectedRoute>
       } />
       <Route path="/admin/appointments" element={
         <ProtectedRoute role="admin"><AdminLayout><AdminAppointments /></AdminLayout></ProtectedRoute>

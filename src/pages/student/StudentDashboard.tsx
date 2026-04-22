@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { liveClassApi, recordedApi, assignmentApi, sessionApi } from '../../api';
+import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi } from '../../api';
 
-type MainView = 'dashboard' | 'sessions' | 'settings';
+type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
 
 interface LiveClass {
@@ -31,6 +31,26 @@ interface Booking {
   meetingLink?: string;
 }
 
+interface CurriculumTopic {
+  _id: string;
+  title: string;
+  duration: number;
+  scheduledAt?: string;
+  meetingLink?: string;
+}
+
+interface CurriculumModule {
+  _id: string;
+  title: string;
+  topics: CurriculumTopic[];
+}
+
+interface Curriculum {
+  _id: string;
+  title: string;
+  modules: CurriculumModule[];
+}
+
 const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: string }> = {
   youtube:     { icon: '▶️', label: 'YouTube', color: '#ff4444' },
   drive:       { icon: '📁', label: 'Google Drive', color: '#22c55e' },
@@ -53,6 +73,7 @@ export default function StudentDashboard() {
 
   // Data State
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -69,25 +90,27 @@ export default function StudentDashboard() {
   const [bookingSaving, setBookingSaving] = useState(false);
   const [bookingError, setBookingError] = useState('');
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const courseId = (user?.enrolledCourse as { _id?: string } | undefined)?._id;
 
   const fetchData = useCallback(async () => {
     if (!courseId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [lc, lv, as, bs, ms] = await Promise.all([
+      const [lc, lv, as, bs, ms, curr] = await Promise.all([
         liveClassApi.getMine(),
         recordedApi.getMine(),
         assignmentApi.getMine(),
         sessionApi.getAll(),
         sessionApi.getMentors(),
+        curriculumApi.getMine().catch(() => ({ data: { curriculum: null } })),
       ]);
       setLiveClasses(lc.data.liveClasses);
       setLectures(lv.data.lectures);
       setAssignments(as.data.assignments);
       setBookings(bs.data.bookings);
       setMentors(ms.data.mentors);
+      setCurriculum(curr.data.curriculum);
       
       const wt: Record<string, number> = {};
       lv.data.lectures.forEach((l: Lecture) => { wt[l._id] = l.watchDuration || 0; });
@@ -160,8 +183,23 @@ export default function StudentDashboard() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
+  const now = new Date();
+  const upcomingClasses = liveClasses
+    .filter((cls) => new Date(cls.scheduledAt) >= now)
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+    .slice(0, 5);
+  const attendedClasses = liveClasses
+    .filter((cls) => new Date(cls.scheduledAt) < now && cls.attendance === 'present')
+    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+    .slice(0, 5);
+  const missedClasses = liveClasses
+    .filter((cls) => new Date(cls.scheduledAt) < now && cls.attendance !== 'present')
+    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+    .slice(0, 5);
+
   const sidebarItems = [
     { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
+    { id: 'curriculum', icon: '📚', label: 'Curriculum' },
     { id: 'sessions',  icon: '🤝', label: 'One-to-One' },
     { id: 'settings',  icon: '⚙️', label: 'Settings' },
   ];
@@ -181,61 +219,66 @@ export default function StudentDashboard() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      {/* ── SIDEBAR (MENU BAR) ── */}
-      <aside style={{ width: '280px', background: 'var(--bg-sidebar)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
-        <div style={{ padding: '32px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--accent), #818cf8)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎓</div>
-          <div>
-            <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text-primary)' }}>Brit Institute</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>LMS Student</div>
+      <aside style={{ width: '284px', background: 'linear-gradient(180deg, #f8fbff, #f2f7fd)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
+        <div style={{ padding: '28px 22px 18px' }}>
+          <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(29,155,240,0.12), rgba(58,183,255,0.04))' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--accent), #3ab7ff)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: '0 10px 24px rgba(29,155,240,0.22)' }}>🎓</div>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text-primary)' }}>Brit Institute</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Student Workspace</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '0 16px' }}>
+        <nav style={{ flex: 1, padding: '6px 14px' }}>
           {sidebarItems.map(item => (
             <button
               key={item.id}
               onClick={() => setView(item.id as MainView)}
               style={{
-                width: '100%', padding: '12px 16px', borderRadius: '12px', border: 'none', background: view === item.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '4px',
-                color: view === item.id ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: view === item.id ? '700' : '500',
+                width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1px solid transparent', background: view === item.id ? 'linear-gradient(135deg, rgba(29,155,240,0.16), rgba(58,183,255,0.08))' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '6px',
+                color: view === item.id ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: view === item.id ? '700' : '500',
+                boxShadow: view === item.id ? '0 10px 24px rgba(15,23,42,0.08)' : 'none',
+                textAlign: 'left',
               }}
             >
               <span style={{ fontSize: '18px' }}>{item.icon}</span>
               <span>{item.label}</span>
-              {view === item.id && <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }} />}
+              {view === item.id && <div style={{ marginLeft: 'auto', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />}
             </button>
           ))}
         </nav>
 
         <div style={{ padding: '24px', borderTop: '1px solid var(--border-subtle)' }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+           <div className="soft-panel" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '14px' }}>
               <div style={{ width: '32px', height: '32px', background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '14px' }}>
                 {user?.name?.charAt(0)}
               </div>
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Student Account</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student Account</div>
               </div>
            </div>
            <button className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={handleLogout}>🚪 Sign Out</button>
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ flex: 1, padding: '36px 40px', maxWidth: '1280px', margin: '0 auto' }}>
         {loading ? (
           <div className="loading-center"><div className="spinner" /><span>Preparing your dashboard...</span></div>
         ) : (
           <div className="fade-in">
-            
-            {/* ───── DASHBOARD VIEW (LIVE, RECORDED, ASSIGNMENTS) ───── */}
             {view === 'dashboard' && (
               <>
-                <div style={{ marginBottom: '32px' }}>
-                  <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Course Dashboard</h1>
-                  <p style={{ color: 'var(--text-muted)' }}>Welcome back! You're currently studying <strong style={{ color: 'var(--accent)' }}>{(user?.enrolledCourse as { title: string })?.title}</strong></p>
+                <div className="card surface-hero" style={{ padding: '28px', marginBottom: '24px' }}>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Learning Dashboard</div>
+                    <h1 style={{ fontSize: '30px', fontWeight: '800', marginBottom: '8px' }}>Course progress at a glance</h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>Welcome back. You are currently enrolled in <strong style={{ color: 'var(--text-primary)' }}>{(user?.enrolledCourse as { title: string })?.title}</strong>.</p>
+                  </div>
                 </div>
 
                 <div className="tabs" style={{ marginBottom: '24px' }}>
@@ -253,30 +296,118 @@ export default function StudentDashboard() {
                 {/* Dashboard Tabs Content */}
                 {dashTab === 'live' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {liveClasses.length === 0 ? (
-                       <div className="card"><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled for your course yet.</p></div></div>
-                    ) : liveClasses.map(cls => (
-                      <div key={cls._id} className="card" style={{ borderLeft: cls.status === 'live' ? '4px solid var(--danger)' : '1px solid var(--border-subtle)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                              <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
-                              {cls.status === 'live' && <span className="badge badge-live"><span className="live-dot" /> LIVE NOW</span>}
-                              {cls.attendance === 'present' && <span className="badge badge-present">✅ Attended</span>}
-                            </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
-                            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
-                          </div>
-                          {cls.status !== 'ended' ? (
-                             <button className="btn btn-zoom" style={{ background: 'var(--accent)' }} onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                               {attendingId === cls._id ? '⏳ Joining...' : '📹 Join Google Meet'}
-                             </button>
-                          ) : (
-                            <div style={{ textAlign: 'center' }}>{cls.attendance === 'present' ? '✅' : '🔴'}<div style={{ fontSize: '10px' }}>{cls.attendance === 'present' ? 'Attended' : 'Missed'}</div></div>
-                          )}
-                        </div>
+                    <div className="metric-grid">
+                      <div className="metric-card">
+                        <div className="metric-label">Upcoming</div>
+                        <div className="metric-value" style={{ color: 'var(--info)' }}>{upcomingClasses.length}</div>
+                        <div className="metric-help">Next scheduled classes</div>
                       </div>
-                    ))}
+                      <div className="metric-card">
+                        <div className="metric-label">Attended</div>
+                        <div className="metric-value" style={{ color: 'var(--success)' }}>{attendedClasses.length}</div>
+                        <div className="metric-help">Recent completed classes</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Missed</div>
+                        <div className="metric-value" style={{ color: 'var(--danger)' }}>{missedClasses.length}</div>
+                        <div className="metric-help">Classes needing follow-up</div>
+                      </div>
+                    </div>
+
+                    {liveClasses.length === 0 ? (
+                      <div className="card"><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled for your course yet.</p></div></div>
+                    ) : (
+                      <>
+                        <div className="card section-shell">
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Upcoming Classes</h3>
+                            <span className="badge badge-scheduled">Next 5</span>
+                          </div>
+                          {upcomingClasses.length === 0 ? (
+                            <div className="empty-state" style={{ padding: '20px' }}>
+                              <div className="empty-icon">📅</div>
+                              <p>No upcoming classes scheduled.</p>
+                            </div>
+                          ) : upcomingClasses.map(cls => (
+                            <div key={cls._id} style={{ padding: '14px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
+                                    <span className="badge badge-scheduled">Upcoming</span>
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                </div>
+                                <button className="btn btn-zoom" style={{ background: 'var(--accent)' }} onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
+                                  {attendingId === cls._id ? '⏳ Joining...' : '📹 Join Google Meet'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="card section-shell">
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Attended Classes</h3>
+                            <span className="badge badge-present">Last 5</span>
+                          </div>
+                          {attendedClasses.length === 0 ? (
+                            <div className="empty-state" style={{ padding: '20px' }}>
+                              <div className="empty-icon">✅</div>
+                              <p>No attended classes yet.</p>
+                            </div>
+                          ) : attendedClasses.map(cls => (
+                            <div key={cls._id} style={{ padding: '14px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
+                                    <span className="badge badge-present">✅ Attended</span>
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                  ✅
+                                  <div style={{ fontSize: '10px' }}>Attended</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="card section-shell">
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Missed Classes</h3>
+                            <span className="badge badge-absent">Last 5</span>
+                          </div>
+                          {missedClasses.length === 0 ? (
+                            <div className="empty-state" style={{ padding: '20px' }}>
+                              <div className="empty-icon">🎯</div>
+                              <p>No missed classes. Great work.</p>
+                            </div>
+                          ) : missedClasses.map(cls => (
+                            <div key={cls._id} style={{ padding: '14px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
+                                    <span className="badge badge-absent">🔴 Missed</span>
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                  🔴
+                                  <div style={{ fontSize: '10px' }}>Missed</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -395,6 +526,64 @@ export default function StudentDashboard() {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {view === 'curriculum' && (
+              <>
+                <div className="card surface-hero" style={{ padding: '28px', marginBottom: '24px' }}>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Curriculum</div>
+                    <h1 style={{ fontSize: '30px', fontWeight: '800', marginBottom: '8px' }}>Your batch learning roadmap</h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>Track your modules, class schedule, and Google Meet readiness in one place.</p>
+                  </div>
+                </div>
+
+                {!curriculum || curriculum.modules.length === 0 ? (
+                  <div className="card"><div className="empty-state"><div className="empty-icon">📚</div><p>No curriculum is available for your batch yet.</p></div></div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="metric-grid">
+                      <div className="metric-card">
+                        <div className="metric-label">Modules</div>
+                        <div className="metric-value">{curriculum.modules.length}</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Classes</div>
+                        <div className="metric-value">{curriculum.modules.reduce((sum, module) => sum + module.topics.length, 0)}</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Scheduled</div>
+                        <div className="metric-value">{curriculum.modules.reduce((sum, module) => sum + module.topics.filter((topic) => !!topic.scheduledAt).length, 0)}</div>
+                      </div>
+                    </div>
+
+                    {curriculum.modules.map((module, moduleIndex) => (
+                      <div key={module._id || moduleIndex} className="card section-shell" style={{ padding: '22px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent)' }}>{module.title}</h3>
+                          <span className="badge badge-scheduled">{module.topics.length} classes</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {module.topics.map((topic, topicIndex) => (
+                            <div key={topic._id || topicIndex} style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.02), transparent)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                              <div>
+                                <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>{topic.title}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                  {topic.scheduledAt ? `📅 ${new Date(topic.scheduledAt).toLocaleString()}` : 'Schedule will be updated by admin'}
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                <span className="badge badge-scheduled">{topic.duration} mins</span>
+                                {topic.meetingLink ? <span className="badge badge-present">Meet Ready</span> : <span className="badge badge-ended">Meet Pending</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
