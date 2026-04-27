@@ -19,6 +19,15 @@ interface Lecture {
 
 interface Assignment {
   _id: string; title: string; description: string; dueDate: string; attachmentUrl?: string;
+  submission?: {
+    _id: string;
+    driveLink?: string;
+    fileLink?: string;
+    repoLink?: string;
+    notes?: string;
+    status: 'submitted' | 'late';
+    submittedAt: string;
+  } | null;
 }
 
 interface Mentor { _id: string; name: string; username: string }
@@ -89,6 +98,10 @@ export default function StudentDashboard() {
   const [bookingForm, setBookingForm] = useState({ mentor: '', topic: '', dateTime: '' });
   const [bookingSaving, setBookingSaving] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [submissionModal, setSubmissionModal] = useState<Assignment | null>(null);
+  const [submissionSaving, setSubmissionSaving] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const [submissionForm, setSubmissionForm] = useState({ driveLink: '', fileLink: '', repoLink: '', notes: '' });
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const courseId = (user?.enrolledCourse as { _id?: string } | undefined)?._id;
@@ -178,6 +191,36 @@ export default function StudentDashboard() {
       await fetchData();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to cancel session');
+    }
+  };
+
+  const openSubmissionModal = (assignment: Assignment) => {
+    setSubmissionModal(assignment);
+    setSubmissionError('');
+    setSubmissionForm({
+      driveLink: assignment.submission?.driveLink || '',
+      fileLink: assignment.submission?.fileLink || '',
+      repoLink: assignment.submission?.repoLink || '',
+      notes: assignment.submission?.notes || '',
+    });
+  };
+
+  const handleSubmitAssignment = async () => {
+    if (!submissionModal) return;
+    if (!submissionForm.driveLink && !submissionForm.fileLink && !submissionForm.repoLink && !submissionForm.notes) {
+      setSubmissionError('Add at least one link or note before submitting.');
+      return;
+    }
+    setSubmissionSaving(true);
+    setSubmissionError('');
+    try {
+      await assignmentApi.submit(submissionModal._id, submissionForm);
+      await fetchData();
+      setSubmissionModal(null);
+    } catch (err: any) {
+      setSubmissionError(err.response?.data?.message || 'Failed to submit assignment');
+    } finally {
+      setSubmissionSaving(false);
     }
   };
 
@@ -459,16 +502,48 @@ export default function StudentDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {assignments.length === 0 ? (
                        <div className="card"><div className="empty-state"><div className="empty-icon">📝</div><p>No assignments yet.</p></div></div>
-                    ) : assignments.map(a => (
-                      <div key={a._id} className="card">
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>{a.title}</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>{a.description}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>⏰ Due Date: <strong>{new Date(a.dueDate).toLocaleDateString()}</strong></span>
-                          {a.attachmentUrl && <a href={a.attachmentUrl} target="_blank" className="btn btn-secondary btn-sm">📎 View Attachment</a>}
+                    ) : assignments.map(a => {
+                      const overdue = new Date(a.dueDate) < new Date();
+                      return (
+                        <div key={a._id} className="card section-shell">
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
+                            <div>
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                {a.submission ? (
+                                  <span className={`badge ${a.submission.status === 'late' ? 'badge-overdue' : 'badge-present'}`}>
+                                    {a.submission.status === 'late' ? 'Submitted Late' : 'Submitted'}
+                                  </span>
+                                ) : overdue ? (
+                                  <span className="badge badge-overdue">Overdue</span>
+                                ) : (
+                                  <span className="badge badge-scheduled">Pending</span>
+                                )}
+                              </div>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>{a.title}</h3>
+                            </div>
+                            <button className="btn btn-primary btn-sm" onClick={() => openSubmissionModal(a)}>
+                              {a.submission ? 'Update Submission' : 'Submit Work'}
+                            </button>
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>{a.description}</p>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Due Date: <strong>{new Date(a.dueDate).toLocaleDateString()}</strong></span>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              {a.attachmentUrl && <a href={a.attachmentUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">View Attachment</a>}
+                              {a.submission?.driveLink && <a href={a.submission.driveLink} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">Your Drive Link</a>}
+                            </div>
+                          </div>
+                          {a.submission && (
+                            <div className="soft-panel" style={{ padding: '12px', marginTop: '14px' }}>
+                              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                                Last submitted: {new Date(a.submission.submittedAt).toLocaleString()}
+                              </div>
+                              {a.submission.notes && <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{a.submission.notes}</div>}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>
@@ -570,7 +645,7 @@ export default function StudentDashboard() {
                               <div>
                                 <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>{topic.title}</div>
                                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                  {topic.scheduledAt ? `📅 ${new Date(topic.scheduledAt).toLocaleString()}` : 'Schedule will be updated by admin'}
+                                  {topic.scheduledAt ? `📅 ${new Date(topic.scheduledAt).toLocaleString()}` : 'Schedule will be updated by your teacher'}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -599,7 +674,7 @@ export default function StudentDashboard() {
                    <label className="form-label">Username</label>
                    <input className="form-input" value={user?.username} disabled />
                  </div>
-                 <div className="alert alert-info">Profile editing is currently managed by the administrator. Contact support for changes.</div>
+                 <div className="alert alert-info">Profile editing is currently managed by your teacher or super admin. Contact support for changes.</div>
                </div>
             )}
 
@@ -636,6 +711,71 @@ export default function StudentDashboard() {
                <button className="btn btn-primary" onClick={handleCreateBooking} disabled={bookingSaving}>
                  {bookingSaving ? 'Booking...' : 'Confirm Booking'}
                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {submissionModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setSubmissionModal(null); }}>
+          <div className="modal" style={{ maxWidth: '560px' }}>
+            <div className="modal-header">
+              <div>
+                <h2>{submissionModal.submission ? 'Update Assignment Submission' : 'Submit Assignment'}</h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{submissionModal.title}</p>
+              </div>
+              <button className="modal-close" onClick={() => setSubmissionModal(null)}>X</button>
+            </div>
+
+            {submissionError && <div className="alert alert-error">{submissionError}</div>}
+
+            <div className="form-group">
+              <label className="form-label">Google Drive Link</label>
+              <input
+                className="form-input"
+                placeholder="https://drive.google.com/..."
+                value={submissionForm.driveLink}
+                onChange={e => setSubmissionForm(f => ({ ...f, driveLink: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">File Link</label>
+              <input
+                className="form-input"
+                placeholder="PDF, Docs, OneDrive, Dropbox, etc."
+                value={submissionForm.fileLink}
+                onChange={e => setSubmissionForm(f => ({ ...f, fileLink: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Repository / Project Link</label>
+              <input
+                className="form-input"
+                placeholder="GitHub, GitLab, deployed project link..."
+                value={submissionForm.repoLink}
+                onChange={e => setSubmissionForm(f => ({ ...f, repoLink: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Notes for Teacher</label>
+              <textarea
+                className="form-textarea"
+                rows={4}
+                placeholder="Explain what you submitted, blockers, or anything your teacher should review..."
+                value={submissionForm.notes}
+                onChange={e => setSubmissionForm(f => ({ ...f, notes: e.target.value }))}
+              />
+            </div>
+
+            <div className="alert alert-info">
+              Submitting after the due date will automatically be marked as late. You can update your submission later.
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setSubmissionModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSubmitAssignment} disabled={submissionSaving}>
+                {submissionSaving ? 'Submitting...' : (submissionModal.submission ? 'Update Submission' : 'Submit Assignment')}
+              </button>
             </div>
           </div>
         </div>

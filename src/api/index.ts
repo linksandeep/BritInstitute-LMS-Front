@@ -37,6 +37,14 @@ export const adminApi = {
   getStats: () => api.get('/admin/stats'),
 };
 
+export const superAdminApi = {
+  getStats: () => api.get('/superadmin/stats'),
+  getTeachers: () => api.get('/superadmin/teachers'),
+  createTeacher: (data: object) => api.post('/superadmin/teachers', data),
+  updateTeacher: (id: string, data: object) => api.put(`/superadmin/teachers/${id}`, data),
+  deleteTeacher: (id: string) => api.delete(`/superadmin/teachers/${id}`),
+};
+
 // Live Classes
 export const liveClassApi = {
   getAll: () => api.get('/live-classes'),
@@ -69,6 +77,8 @@ export const assignmentApi = {
   create: (data: object) => api.post('/assignments', data),
   update: (id: string, data: object) => api.put(`/assignments/${id}`, data),
   delete: (id: string) => api.delete(`/assignments/${id}`),
+  submit: (id: string, data: object) => api.post(`/assignments/${id}/submit`, data),
+  getSubmissions: (id: string) => api.get(`/assignments/${id}/submissions`),
 };
 
 // Batches

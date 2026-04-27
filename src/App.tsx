@@ -17,9 +17,11 @@ import AdminAssignments from './pages/admin/AdminAssignments';
 import AdminBatches from './pages/admin/AdminBatches';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminCurriculum from './pages/admin/AdminCurriculum';
+import SuperAdminLayout from './layouts/SuperAdminLayout';
+import SuperAdminTeachers from './pages/superadmin/SuperAdminTeachers';
 
 // Route guard
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
+function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, loading } = useAuth();
   if (loading) return (
     <div className="loading-center" style={{ minHeight: '100vh' }}>
@@ -28,7 +30,7 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role) return <Navigate to="/dashboard" replace />;
+  if (roles && !roles.includes(user.role)) return <Navigate to={user.role === 'superadmin' ? '/superadmin' : user.role === 'teacher' ? '/teacher' : '/dashboard'} replace />;
   return <>{children}</>;
 }
 
@@ -36,7 +38,7 @@ function DashboardRedirect() {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-center" style={{ minHeight: '100vh' }}><div className="spinner" /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  return <Navigate to={user.role === 'superadmin' ? '/superadmin' : user.role === 'teacher' ? '/teacher' : '/dashboard'} replace />;
 }
 
 function AppRoutes() {
@@ -47,36 +49,44 @@ function AppRoutes() {
 
       {/* Student */}
       <Route path="/dashboard" element={
-        <ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>
+        <ProtectedRoute roles={['student']}><StudentDashboard /></ProtectedRoute>
       } />
 
-      {/* Admin */}
-      <Route path="/admin" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>
+      <Route path="/admin" element={<Navigate to="/teacher" replace />} />
+
+      <Route path="/teacher" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/users" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/users" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/courses" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminCourses /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/courses" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminCourses /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/live-classes" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminLiveClasses /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/live-classes" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminLiveClasses /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/recorded" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminRecorded /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/recorded" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminRecorded /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/assignments" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminAssignments /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/assignments" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminAssignments /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/batches" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminBatches /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/batches" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminBatches /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/curriculum" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminCurriculum /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/curriculum" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminCurriculum /></AdminLayout></ProtectedRoute>
       } />
-      <Route path="/admin/appointments" element={
-        <ProtectedRoute role="admin"><AdminLayout><AdminAppointments /></AdminLayout></ProtectedRoute>
+      <Route path="/teacher/appointments" element={
+        <ProtectedRoute roles={['teacher', 'superadmin']}><AdminLayout><AdminAppointments /></AdminLayout></ProtectedRoute>
+      } />
+
+      <Route path="/superadmin" element={
+        <ProtectedRoute roles={['superadmin']}><SuperAdminLayout><SuperAdminTeachers /></SuperAdminLayout></ProtectedRoute>
+      } />
+      <Route path="/superadmin/teachers" element={
+        <ProtectedRoute roles={['superadmin']}><SuperAdminLayout><SuperAdminTeachers /></SuperAdminLayout></ProtectedRoute>
       } />
 
       {/* Fallback */}

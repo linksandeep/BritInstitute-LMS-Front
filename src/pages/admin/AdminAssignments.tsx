@@ -4,7 +4,17 @@ import { batchApi, assignmentApi } from '../../api';
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface Assignment {
   _id: string; title: string; description: string; dueDate: string;
-  attachmentUrl?: string; batch: Batch; createdAt: string;
+  attachmentUrl?: string; batch: Batch; createdAt: string; submissionCount?: number;
+}
+interface Submission {
+  _id: string;
+  driveLink?: string;
+  fileLink?: string;
+  repoLink?: string;
+  notes?: string;
+  status: 'submitted' | 'late';
+  submittedAt: string;
+  student: { name: string; username: string };
 }
 
 export default function AdminAssignments() {
@@ -12,6 +22,9 @@ export default function AdminAssignments() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [submissionModal, setSubmissionModal] = useState<Assignment | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [editAss, setEditAss] = useState<Assignment | null>(null);
   const [form, setForm] = useState({ batch: '', title: '', description: '', dueDate: '', attachmentUrl: '' });
   const [error, setError] = useState('');
@@ -61,6 +74,17 @@ export default function AdminAssignments() {
     await fetchAll();
   };
 
+  const openSubmissions = async (assignment: Assignment) => {
+    setSubmissionModal(assignment);
+    setLoadingSubmissions(true);
+    try {
+      const res = await assignmentApi.getSubmissions(assignment._id);
+      setSubmissions(res.data.submissions || []);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
   const isOverdue = (dueDate: string) => new Date(dueDate) < new Date();
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
@@ -81,7 +105,7 @@ export default function AdminAssignments() {
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>Title</th><th>Batch</th><th>Course</th><th>Due Date</th><th>Status</th><th>Attachment</th><th>Actions</th></tr>
+              <tr><th>Title</th><th>Batch</th><th>Course</th><th>Due Date</th><th>Status</th><th>Submissions</th><th>Attachment</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {assignments.map(a => (
@@ -97,6 +121,11 @@ export default function AdminAssignments() {
                     {isOverdue(a.dueDate)
                       ? <span className="badge badge-overdue">⏰ Overdue</span>
                       : <span className="badge badge-scheduled">📅 Upcoming</span>}
+                  </td>
+                  <td>
+                    <button className="btn btn-secondary btn-sm" onClick={() => openSubmissions(a)}>
+                      {a.submissionCount || 0} View
+                    </button>
                   </td>
                   <td>
                     {a.attachmentUrl ? <a href={a.attachmentUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>📎 View</a> : <span className="text-muted">—</span>}
@@ -153,6 +182,52 @@ export default function AdminAssignments() {
                 {saving ? 'Saving...' : (editAss ? '✓ Update' : '+ Create')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {submissionModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setSubmissionModal(null); }}>
+          <div className="modal" style={{ maxWidth: '820px' }}>
+            <div className="modal-header">
+              <div>
+                <h2>Assignment Submissions</h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{submissionModal.title}</p>
+              </div>
+              <button className="modal-close" onClick={() => setSubmissionModal(null)}>X</button>
+            </div>
+
+            {loadingSubmissions ? (
+              <div className="loading-center"><div className="spinner" /></div>
+            ) : submissions.length === 0 ? (
+              <div className="empty-state" style={{ padding: '32px' }}>
+                <div className="empty-icon">📝</div>
+                <p>No student submissions yet.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' }}>
+                {submissions.map((submission) => (
+                  <div key={submission._id} className="soft-panel" style={{ padding: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>{submission.student?.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>@{submission.student?.username}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span className={`badge ${submission.status === 'late' ? 'badge-overdue' : 'badge-present'}`}>{submission.status === 'late' ? 'Late' : 'Submitted'}</span>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{new Date(submission.submittedAt).toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: submission.notes ? '10px' : 0 }}>
+                      {submission.driveLink && <a className="btn btn-secondary btn-sm" href={submission.driveLink} target="_blank" rel="noreferrer">Drive Link</a>}
+                      {submission.fileLink && <a className="btn btn-secondary btn-sm" href={submission.fileLink} target="_blank" rel="noreferrer">File Link</a>}
+                      {submission.repoLink && <a className="btn btn-secondary btn-sm" href={submission.repoLink} target="_blank" rel="noreferrer">Repo Link</a>}
+                    </div>
+                    {submission.notes && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{submission.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

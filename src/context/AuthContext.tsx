@@ -5,7 +5,7 @@ interface User {
   id: string;
   name: string;
   username: string;
-  role: 'admin' | 'student';
+  role: 'superadmin' | 'teacher' | 'student';
   enrolledCourse?: { _id: string; title: string; description: string };
 }
 
