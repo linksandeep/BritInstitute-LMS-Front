@@ -9,6 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const basePath = '/admin';
   const workspaceLabel = user?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace';
   const roleLabel = user?.role === 'teacher' ? 'Teacher / Mentor' : user?.role === 'superadmin' ? 'Super Admin Access' : 'Admin';
+  const showSuperAdminHome = user?.role === 'superadmin';
   const navItems = [
     { icon: '📊', label: 'Dashboard', path: basePath },
     { icon: '🗂️', label: 'Batches', path: `${basePath}/batches` },
@@ -45,6 +46,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav style={{ padding: '18px 12px', flex: 1 }}>
+          {showSuperAdminHome && (
+            <Link
+              to="/superadmin"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
+                borderRadius: '12px', textDecoration: 'none', marginBottom: '12px',
+                color: 'var(--text-secondary)', background: 'rgba(5,150,105,0.08)',
+                fontWeight: '700', fontSize: '14px', border: '1px solid rgba(16,185,129,0.18)',
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>↩</span>
+              <span>Back to Super Admin Home</span>
+            </Link>
+          )}
           {navItems.map(item => {
             const active = location.pathname === item.path;
             return (
