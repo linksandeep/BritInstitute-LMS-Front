@@ -24,7 +24,7 @@ export const authApi = {
 // Admin
 export const adminApi = {
   // Users
-  getUsers: () => api.get('/admin/users'),
+  getUsers: (search?: string) => api.get('/admin/users', { params: search ? { search } : undefined }),
   createUser: (data: object) => api.post('/admin/users', data),
   updateUser: (id: string, data: object) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
@@ -71,14 +71,14 @@ export const recordedApi = {
 
 // Assignments
 export const assignmentApi = {
-  getAll: () => api.get('/assignments'),
+  getAll: (batch?: string) => api.get('/assignments', { params: batch ? { batch } : undefined }),
   getByBatch: (batchId: string) => api.get(`/assignments/batch/${batchId}`),
   getMine: () => api.get('/assignments/me'),
   create: (data: object) => api.post('/assignments', data),
   update: (id: string, data: object) => api.put(`/assignments/${id}`, data),
   delete: (id: string) => api.delete(`/assignments/${id}`),
   submit: (id: string, data: object) => api.post(`/assignments/${id}/submit`, data),
-  getSubmissions: (id: string) => api.get(`/assignments/${id}/submissions`),
+  getSubmissions: (id: string, search?: string) => api.get(`/assignments/${id}/submissions`, { params: search ? { search } : undefined }),
 };
 
 // Batches

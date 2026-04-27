@@ -8,6 +8,11 @@ interface Stats { totalStudents: number; totalCourses: number; totalBatches: num
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const basePath = '/admin';
+  const workspaceTitle = user?.role === 'teacher' ? 'Teacher Overview' : 'Admin Overview';
+  const workspaceHelp = user?.role === 'teacher'
+    ? 'Teacher workspace is ready for batch and curriculum operations.'
+    : 'Admin workspace is ready with full student and academic controls.';
   const [stats, setStats] = useState<Stats>({ totalStudents: 0, totalCourses: 0, totalBatches: 0 });
   const [upcomingClasses, setUpcomingClasses] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +54,7 @@ export default function AdminDashboard() {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-              Teacher Overview
+              {workspaceTitle}
             </div>
             <h1 style={{ fontSize: '34px', lineHeight: 1.1, fontWeight: 800, color: 'var(--text-primary)', marginBottom: '10px' }}>
               Welcome back, {user?.name}!
@@ -67,7 +72,7 @@ export default function AdminDashboard() {
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Teacher workspace is ready for batch and curriculum operations.
+              {workspaceHelp}
             </div>
           </div>
         </div>
@@ -95,12 +100,12 @@ export default function AdminDashboard() {
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {[
-            { label: '+ Add Student', path: '/teacher/users', emoji: '👤' },
-            { label: '+ Create Batch', path: '/teacher/batches', emoji: '🗂️' },
-            { label: '+ Create Course', path: '/teacher/courses', emoji: '📚' },
-            { label: '+ Schedule Class', path: '/teacher/live-classes', emoji: '🎥' },
-            { label: '+ Add Recording', path: '/teacher/recorded', emoji: '🎬' },
-            { label: '+ New Assignment', path: '/teacher/assignments', emoji: '📝' },
+            { label: '+ Add Student', path: `${basePath}/users`, emoji: '👤' },
+            { label: '+ Create Batch', path: `${basePath}/batches`, emoji: '🗂️' },
+            { label: '+ Create Course', path: `${basePath}/courses`, emoji: '📚' },
+            { label: '+ Schedule Class', path: `${basePath}/live-classes`, emoji: '🎥' },
+            { label: '+ Add Recording', path: `${basePath}/recorded`, emoji: '🎬' },
+            { label: '+ New Assignment', path: `${basePath}/assignments`, emoji: '📝' },
           ].map(a => (
             <button key={a.path} className="btn btn-secondary" onClick={() => navigate(a.path)}>
               {a.emoji} {a.label}
@@ -115,7 +120,7 @@ export default function AdminDashboard() {
             <h2 style={{ fontSize: '19px', fontWeight: '800', marginBottom: '4px', color: 'var(--text-primary)' }}>Upcoming Live Classes</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>The next scheduled classes across your active operations.</p>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/teacher/live-classes')}>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`${basePath}/live-classes`)}>
             Open Live Classes
           </button>
         </div>
@@ -123,7 +128,7 @@ export default function AdminDashboard() {
           <div className="empty-state">
             <div className="empty-icon">📅</div>
             <p>No upcoming classes scheduled.</p>
-            <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => navigate('/teacher/live-classes')}>
+            <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => navigate(`${basePath}/live-classes`)}>
               Schedule Now
             </button>
           </div>

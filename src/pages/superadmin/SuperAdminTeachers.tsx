@@ -14,11 +14,12 @@ interface Stats {
   totalTeachers: number;
   activeTeachers: number;
   totalStudents: number;
+  totalAdmins?: number;
 }
 
 export default function SuperAdminTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalTeachers: 0, activeTeachers: 0, totalStudents: 0 });
+  const [stats, setStats] = useState<Stats>({ totalTeachers: 0, activeTeachers: 0, totalStudents: 0, totalAdmins: 0 });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
@@ -136,6 +137,11 @@ export default function SuperAdminTeachers() {
           <div className="metric-label">Active Teachers</div>
           <div className="metric-value" style={{ color: 'var(--success)' }}>{stats.activeTeachers}</div>
           <div className="metric-help">Currently enabled teacher access</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Active Admins</div>
+          <div className="metric-value" style={{ color: '#0f766e' }}>{stats.totalAdmins || 0}</div>
+          <div className="metric-help">Admin accounts with full operations access</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Students</div>

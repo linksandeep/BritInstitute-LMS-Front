@@ -13,7 +13,10 @@ export default function LoginPage() {
   // Navigate once user state actually flushes — avoids React 18 batching race
   useEffect(() => {
     if (user) {
-      navigate(user.role === 'superadmin' ? '/superadmin' : user.role === 'teacher' ? '/teacher' : '/dashboard', { replace: true });
+      navigate(
+        user.role === 'superadmin' ? '/superadmin' : user.role === 'student' ? '/dashboard' : '/admin',
+        { replace: true }
+      );
     }
   }, [user, navigate]);
 
@@ -99,7 +102,7 @@ export default function LoginPage() {
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            Account credentials are provided by your teacher or super admin
+            Account credentials are provided by your teacher, admin, or super admin
           </p>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const navItems = [
   { label: 'Dashboard', path: '/superadmin' },
   { label: 'Teachers', path: '/superadmin/teachers' },
+  { label: 'Operations', path: '/admin' },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {

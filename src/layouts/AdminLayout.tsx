@@ -2,22 +2,24 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const navItems = [
-  { icon: '📊', label: 'Dashboard',   path: '/teacher' },
-  { icon: '🗂️', label: 'Batches',     path: '/teacher/batches' },
-  { icon: '🧭', label: 'Curriculum',  path: '/teacher/curriculum' },
-  { icon: '👥', label: 'Students',    path: '/teacher/users' },
-  { icon: '📚', label: 'Courses',     path: '/teacher/courses' },
-  { icon: '🎥', label: 'Live Classes', path: '/teacher/live-classes' },
-  { icon: '🎬', label: 'Recorded',    path: '/teacher/recorded' },
-  { icon: '📝', label: 'Assignments', path: '/teacher/assignments' },
-  { icon: '🗓️', label: 'Appointments', path: '/teacher/appointments' },
-];
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const basePath = '/admin';
+  const workspaceLabel = user?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace';
+  const roleLabel = user?.role === 'teacher' ? 'Teacher / Mentor' : user?.role === 'superadmin' ? 'Super Admin Access' : 'Admin';
+  const navItems = [
+    { icon: '📊', label: 'Dashboard', path: basePath },
+    { icon: '🗂️', label: 'Batches', path: `${basePath}/batches` },
+    { icon: '🧭', label: 'Curriculum', path: `${basePath}/curriculum` },
+    { icon: '👥', label: 'Students', path: `${basePath}/users` },
+    { icon: '📚', label: 'Courses', path: `${basePath}/courses` },
+    { icon: '🎥', label: 'Live Classes', path: `${basePath}/live-classes` },
+    { icon: '🎬', label: 'Recorded', path: `${basePath}/recorded` },
+    { icon: '📝', label: 'Assignments', path: `${basePath}/assignments` },
+    { icon: '🗓️', label: 'Appointments', path: `${basePath}/appointments` },
+  ];
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -36,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div>
                 <div style={{ fontWeight: '800', fontSize: '16px' }}>Brit Institute</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Teacher Workspace</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{workspaceLabel}</div>
               </div>
             </div>
           </div>
@@ -74,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="soft-panel" style={{ padding: '14px', marginBottom: '10px' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Signed in as</div>
             <div style={{ fontSize: '14px', fontWeight: '700' }}>{user?.name}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Teacher / Mentor</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{roleLabel}</div>
           </div>
           <button
             onClick={handleLogout}
