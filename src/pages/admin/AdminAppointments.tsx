@@ -9,6 +9,7 @@ interface Booking {
   dateTime: string;
   status: 'pending' | 'accepted' | 'completed' | 'cancelled';
   meetingLink?: string;
+  zoomStartUrl?: string;
   createdAt: string;
 }
 
@@ -51,7 +52,8 @@ export default function AdminAppointments() {
         return next;
       });
     } catch (err) {
-      alert('Failed to update booking status');
+      const apiError = err as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || 'Failed to update booking status');
     } finally {
       setUpdating(null);
     }
@@ -133,7 +135,7 @@ export default function AdminAppointments() {
                           <input
                             className="form-input"
                             style={{ padding: '6px 10px', fontSize: '12px' }}
-                            placeholder="Add Meet Link (optional)"
+                            placeholder="Optional Zoom link override"
                             value={meetLinkInput[b._id] || ''}
                             onChange={e => setMeetLinkInput(p => ({ ...p, [b._id]: e.target.value }))}
                           />
@@ -143,7 +145,7 @@ export default function AdminAppointments() {
                               onClick={() => handleUpdateStatus(b._id, 'accepted')}
                               disabled={updating === b._id}
                             >
-                              Accept
+                              Accept & Create Zoom
                             </button>
                             <button
                               className="btn btn-danger btn-sm"
@@ -158,14 +160,21 @@ export default function AdminAppointments() {
                       {b.status === 'accepted' && (
                         <>
                           {b.meetingLink ? (
-                            <a href={b.meetingLink} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none' }}>
-                               🔗 Open Meet
-                            </a>
+                            <>
+                              <a href={b.meetingLink} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none' }}>
+                                🔗 Join Zoom
+                              </a>
+                              {b.zoomStartUrl && (
+                                <a href={b.zoomStartUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: 'var(--success)', textDecoration: 'none' }}>
+                                  ▶ Start as Host
+                                </a>
+                              )}
+                            </>
                           ) : (
                             <input
                               className="form-input"
                               style={{ padding: '6px 10px', fontSize: '12px' }}
-                              placeholder="Add Meet Link"
+                              placeholder="Add Zoom link"
                               value={meetLinkInput[b._id] || ''}
                               onChange={e => setMeetLinkInput(p => ({ ...p, [b._id]: e.target.value }))}
                             />
@@ -177,7 +186,7 @@ export default function AdminAppointments() {
                                  onClick={() => handleUpdateStatus(b._id, 'accepted')}
                                  disabled={!meetLinkInput[b._id]}
                                >
-                                 Update Link
+                                 Update Zoom Link
                                </button>
                             )}
                             <button
