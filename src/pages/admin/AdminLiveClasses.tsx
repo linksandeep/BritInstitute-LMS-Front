@@ -68,8 +68,11 @@ export default function AdminLiveClasses() {
       await fetchAll();
       setShowModal(false);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg || 'An error occurred');
+      const apiError = err as { response?: { data?: { message?: string } }, message?: string };
+      const msg = apiError.response?.data?.message;
+      if (msg) setError(msg);
+      else if (apiError.message === 'Network Error') setError('Cannot reach the backend server. Please start the backend and try again.');
+      else setError('Unable to create Zoom class. Please try again.');
     } finally { setSaving(false); }
   };
 
