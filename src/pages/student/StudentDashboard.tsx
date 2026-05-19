@@ -62,10 +62,10 @@ interface Curriculum {
 }
 
 const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: string }> = {
-  youtube:     { icon: '▶️', label: 'YouTube', color: '#ff4444' },
-  drive:       { icon: '📁', label: 'Google Drive', color: '#22c55e' },
-  google_meet: { icon: '🎥', label: 'Meet Recording', color: '#60a5fa' },
-  other:       { icon: '🔗', label: 'Watch', color: '#6366f1' },
+  youtube:     { icon: 'YT', label: 'YouTube', color: '#dc2626' },
+  drive:       { icon: 'DR', label: 'Google Drive', color: '#059669' },
+  google_meet: { icon: 'MR', label: 'Meet Recording', color: '#2563eb' },
+  other:       { icon: 'LN', label: 'External Link', color: '#4f46e5' },
 };
 
 function getYouTubeId(url: string): string | null {
@@ -252,17 +252,17 @@ export default function StudentDashboard() {
     .slice(0, 5);
 
   const sidebarItems = [
-    { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
-    { id: 'curriculum', icon: '📚', label: 'Curriculum' },
-    { id: 'sessions',  icon: '🤝', label: 'One-to-One' },
-    { id: 'settings',  icon: '⚙️', label: 'Settings' },
+    { id: 'dashboard', code: 'DB', label: 'Dashboard' },
+    { id: 'curriculum', code: 'CR', label: 'Curriculum' },
+    { id: 'sessions',  code: '1:1', label: 'One-to-One' },
+    { id: 'settings',  code: 'ST', label: 'Settings' },
   ];
 
   if (!courseId && !loading) {
      return (
        <div className="loading-center">
          <div className="card" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📚</div>
+            <div className="student-empty-mark">NE</div>
             <h3>Not Enrolled</h3>
             <p style={{ color: 'var(--text-muted)' }}>You haven't been enrolled in any course yet.</p>
             <button className="btn btn-secondary btn-sm" style={{ marginTop: '20px' }} onClick={handleLogout}>Sign Out</button>
@@ -272,10 +272,10 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      <aside style={{ width: '284px', background: 'linear-gradient(180deg, #f8fbff, #f2f7fd)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
+    <div className="student-shell">
+      <aside className="student-sidebar">
         <div style={{ padding: '28px 22px 18px' }}>
-          <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(29,155,240,0.12), rgba(58,183,255,0.04))' }}>
+          <div className="student-brand-panel">
             <BrandLogo subtitle={'Student\nWorkspace'} />
           </div>
         </div>
@@ -285,17 +285,10 @@ export default function StudentDashboard() {
             <button
               key={item.id}
               onClick={() => setView(item.id as MainView)}
-              style={{
-                width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1px solid transparent', background: view === item.id ? 'linear-gradient(135deg, rgba(29,155,240,0.16), rgba(58,183,255,0.08))' : 'transparent',
-                display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '6px',
-                color: view === item.id ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: view === item.id ? '700' : '500',
-                boxShadow: view === item.id ? '0 10px 24px rgba(15,23,42,0.08)' : 'none',
-                textAlign: 'left',
-              }}
+              className={`student-nav-item${view === item.id ? ' active' : ''}`}
             >
-              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              <span className="student-nav-code">{item.code}</span>
               <span>{item.label}</span>
-              {view === item.id && <div style={{ marginLeft: 'auto', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />}
             </button>
           ))}
         </nav>
@@ -310,18 +303,18 @@ export default function StudentDashboard() {
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student Account</div>
               </div>
            </div>
-           <button className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={handleLogout}>🚪 Sign Out</button>
+           <button className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={handleLogout}>Sign Out</button>
         </div>
       </aside>
 
-      <main style={{ flex: 1, padding: '36px 40px', maxWidth: '1280px', margin: '0 auto' }}>
+      <main className="student-main">
         {loading ? (
           <div className="loading-center"><div className="spinner" /><span>Preparing your dashboard...</span></div>
         ) : (
           <div className="fade-in">
             {view === 'dashboard' && (
               <>
-                <div className="card surface-hero" style={{ padding: '28px', marginBottom: '24px' }}>
+                <div className="card student-hero" style={{ marginBottom: '24px' }}>
                   <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Learning Dashboard</div>
                     <h1 style={{ fontSize: '30px', fontWeight: '800', marginBottom: '8px' }}>Course progress at a glance</h1>
@@ -331,12 +324,12 @@ export default function StudentDashboard() {
 
                 <div className="tabs" style={{ marginBottom: '24px' }}>
                   {[
-                    { key: 'live', icon: '🎥', label: 'Live Classes' },
-                    { key: 'recorded', icon: '🎬', label: 'Recorded Lectures' },
-                    { key: 'assignments', icon: '📝', label: 'Assignments' }
+                    { key: 'live', label: 'Live Classes' },
+                    { key: 'recorded', label: 'Recorded Lectures' },
+                    { key: 'assignments', label: 'Assignments' }
                   ].map(t => (
                     <button key={t.key} className={`tab-btn${dashTab === t.key ? ' active' : ''}`} onClick={() => setDashTab(t.key as DashboardTab)}>
-                      {t.icon} {t.label}
+                      {t.label}
                     </button>
                   ))}
                 </div>
@@ -363,7 +356,7 @@ export default function StudentDashboard() {
                     </div>
 
                     {liveClasses.length === 0 ? (
-                      <div className="card"><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled for your course yet.</p></div></div>
+                      <div className="card"><div className="empty-state"><div className="student-empty-mark">LC</div><p>No live classes scheduled for your course yet.</p></div></div>
                     ) : (
                       <>
                         {ongoingClasses.length > 0 && (
@@ -382,10 +375,10 @@ export default function StudentDashboard() {
                                       {cls.attendance === 'present' && <span className="badge badge-present">Attendance marked</span>}
                                     </div>
                                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; Ends {getClassEndAt(cls).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Starts {new Date(cls.scheduledAt).toLocaleString()} • Ends {getClassEndAt(cls).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
                                   <button className="btn btn-zoom" onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                                    {attendingId === cls._id ? '⏳ Joining...' : '📹 Rejoin Zoom'}
+                                    {attendingId === cls._id ? 'Joining...' : 'Rejoin Zoom'}
                                   </button>
                                 </div>
                               </div>
@@ -400,7 +393,7 @@ export default function StudentDashboard() {
                           </div>
                           {upcomingClasses.length === 0 ? (
                             <div className="empty-state" style={{ padding: '20px' }}>
-                              <div className="empty-icon">📅</div>
+                              <div className="student-empty-mark">UP</div>
                               <p>No upcoming classes scheduled.</p>
                             </div>
                           ) : upcomingClasses.map(cls => (
@@ -412,10 +405,10 @@ export default function StudentDashboard() {
                                     <span className="badge badge-scheduled">Upcoming</span>
                                   </div>
                                   <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
-                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Starts {new Date(cls.scheduledAt).toLocaleString()} • Duration {cls.duration}m</p>
                                 </div>
                                 <button className="btn btn-zoom" style={{ background: 'var(--accent)' }} onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                                  {attendingId === cls._id ? '⏳ Joining...' : '📹 Join Zoom'}
+                                  {attendingId === cls._id ? 'Joining...' : 'Join Zoom'}
                                 </button>
                               </div>
                             </div>
@@ -429,7 +422,7 @@ export default function StudentDashboard() {
                           </div>
                           {attendedClasses.length === 0 ? (
                             <div className="empty-state" style={{ padding: '20px' }}>
-                              <div className="empty-icon">✅</div>
+                              <div className="student-empty-mark">AT</div>
                               <p>No attended classes yet.</p>
                             </div>
                           ) : attendedClasses.map(cls => (
@@ -438,14 +431,13 @@ export default function StudentDashboard() {
                                 <div style={{ flex: 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                     <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
-                                    <span className="badge badge-present">✅ Attended</span>
+                                    <span className="badge badge-present">Attended</span>
                                   </div>
                                   <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
-                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Started {new Date(cls.scheduledAt).toLocaleString()} • Duration {cls.duration}m</p>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                  ✅
-                                  <div style={{ fontSize: '10px' }}>Attended</div>
+                                <div className="student-status-chip success">
+                                  Present
                                 </div>
                               </div>
                             </div>
@@ -459,7 +451,7 @@ export default function StudentDashboard() {
                           </div>
                           {missedClasses.length === 0 ? (
                             <div className="empty-state" style={{ padding: '20px' }}>
-                              <div className="empty-icon">🎯</div>
+                              <div className="student-empty-mark">OK</div>
                               <p>No missed classes. Great work.</p>
                             </div>
                           ) : missedClasses.map(cls => (
@@ -468,14 +460,13 @@ export default function StudentDashboard() {
                                 <div style={{ flex: 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                     <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
-                                    <span className="badge badge-absent">🔴 Missed</span>
+                                    <span className="badge badge-absent">Missed</span>
                                   </div>
                                   <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
-                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
+                                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Started {new Date(cls.scheduledAt).toLocaleString()} • Duration {cls.duration}m</p>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                  🔴
-                                  <div style={{ fontSize: '10px' }}>Missed</div>
+                                <div className="student-status-chip danger">
+                                  Absent
                                 </div>
                               </div>
                             </div>
@@ -489,7 +480,7 @@ export default function StudentDashboard() {
                 {dashTab === 'recorded' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {lectures.length === 0 ? (
-                      <div className="card"><div className="empty-state"><div className="empty-icon">🎬</div><p>No recorded lectures yet.</p></div></div>
+                      <div className="card"><div className="empty-state"><div className="student-empty-mark">RC</div><p>No recorded lectures yet.</p></div></div>
                     ) : lectures.map((l, idx) => {
                       const typeInfo = VIDEO_TYPE_INFO[l.videoType] || VIDEO_TYPE_INFO.other;
                       const ytId = l.videoType === 'youtube' ? getYouTubeId(l.videoUrl) : null;
@@ -500,7 +491,7 @@ export default function StudentDashboard() {
                         <div key={l._id} className="card" style={{ overflow: 'hidden', borderLeft: isCompleted ? '4px solid var(--success)' : '1px solid var(--border-subtle)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                <div style={{ width: '48px', height: '48px', background: `${typeInfo.color}15`, color: typeInfo.color, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{isCompleted ? '✅' : typeInfo.icon}</div>
+                                <div className="student-type-mark" style={{ background: `${typeInfo.color}15`, color: typeInfo.color }}>{isCompleted ? 'OK' : typeInfo.icon}</div>
                                 <div>
                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>Lecture #{idx+1} • {typeInfo.label}</div>
                                    <h3 style={{ fontSize: '16px', fontWeight: '700' }}>{l.title}</h3>
@@ -533,7 +524,7 @@ export default function StudentDashboard() {
                 {dashTab === 'assignments' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {assignments.length === 0 ? (
-                       <div className="card"><div className="empty-state"><div className="empty-icon">📝</div><p>No assignments yet.</p></div></div>
+                       <div className="card"><div className="empty-state"><div className="student-empty-mark">AS</div><p>No assignments yet.</p></div></div>
                     ) : assignments.map(a => {
                       const overdue = new Date(a.dueDate) < new Date();
                       return (
@@ -596,7 +587,7 @@ export default function StudentDashboard() {
                   {bookings.length === 0 ? (
                     <div className="card">
                       <div className="empty-state" style={{ padding: '40px' }}>
-                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤝</div>
+                        <div className="student-empty-mark">1:1</div>
                         <h3>No Sessions Scheduled</h3>
                         <p style={{ maxWidth: '300px', margin: '0 auto 20px' }}>Need help with something specific? Book a 1:1 session with a mentor!</p>
                         <button className="btn btn-primary btn-sm" onClick={() => setShowBookingModal(true)}>Book First Session</button>
@@ -612,13 +603,13 @@ export default function StudentDashboard() {
                           </div>
                           <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '4px' }}>{b.topic}</h3>
                           <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
-                             <span>👤 Mentor: <strong>{b.mentor.name}</strong></span>
-                             <span>📅 {new Date(b.dateTime).toLocaleString()}</span>
+                             <span>Mentor: <strong>{b.mentor.name}</strong></span>
+                             <span>{new Date(b.dateTime).toLocaleString()}</span>
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                            {b.status === 'accepted' && b.meetingLink && (
-                              <button className="btn btn-primary btn-sm" onClick={() => window.open(b.meetingLink, '_blank')}>📹 Join Session</button>
+                              <button className="btn btn-primary btn-sm" onClick={() => window.open(b.meetingLink, '_blank')}>Join Session</button>
                            )}
                            {(b.status === 'pending' || b.status === 'accepted') && (
                               <button className="btn btn-danger btn-sm" onClick={() => handleCancelBooking(b._id)}>Cancel</button>
@@ -627,7 +618,7 @@ export default function StudentDashboard() {
                       </div>
                       {b.status === 'accepted' && !b.meetingLink && (
                         <div style={{ marginTop: '12px', background: 'rgba(52,211,153,0.1)', color: '#059669', padding: '10px', borderRadius: '8px', fontSize: '12px' }}>
-                          🎉 Your session is confirmed! The mentor will add the meeting link shortly.
+                          Your session is confirmed. The mentor will add the meeting link shortly.
                         </div>
                       )}
                     </div>
@@ -647,7 +638,7 @@ export default function StudentDashboard() {
                 </div>
 
                 {!curriculum || curriculum.modules.length === 0 ? (
-                  <div className="card"><div className="empty-state"><div className="empty-icon">📚</div><p>No curriculum is available for your batch yet.</p></div></div>
+                  <div className="card"><div className="empty-state"><div className="student-empty-mark">CR</div><p>No curriculum is available for your batch yet.</p></div></div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div className="metric-grid">
@@ -677,7 +668,7 @@ export default function StudentDashboard() {
                               <div>
                                 <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>{topic.title}</div>
                                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                  {topic.scheduledAt ? `📅 ${new Date(topic.scheduledAt).toLocaleString()}` : 'Schedule will be updated by your teacher'}
+                                  {topic.scheduledAt ? `Scheduled ${new Date(topic.scheduledAt).toLocaleString()}` : 'Schedule will be updated by your teacher'}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -719,10 +710,10 @@ export default function StudentDashboard() {
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowBookingModal(false); }}>
           <div className="modal" style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h2>📅 Book 1:1 Session</h2>
+              <h2>Book 1:1 Session</h2>
               <button className="modal-close" onClick={() => setShowBookingModal(false)}>✕</button>
             </div>
-            {bookingError && <div className="alert alert-error">⚠️ {bookingError}</div>}
+            {bookingError && <div className="alert alert-error">{bookingError}</div>}
             <div className="form-group">
               <label className="form-label">Select Mentor</label>
               <select className="form-select" value={bookingForm.mentor} onChange={e => setBookingForm(f => ({ ...f, mentor: e.target.value }))}>
