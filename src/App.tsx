@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import MeetingReminderPopup from './components/MeetingReminderPopup';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -114,6 +115,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <MeetingReminderPopup />
       </AuthProvider>
     </BrowserRouter>
   );

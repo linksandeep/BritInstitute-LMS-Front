@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { batchApi } from '../../api';
+import { adminApi, batchApi, curriculumApi } from '../../api';
 import AdminCurriculumModal from './AdminCurriculumModal';
 
 interface Course {
@@ -16,10 +16,61 @@ interface Batch {
   isActive: boolean;
 }
 
+interface CurriculumTopicDraft {
+  title: string;
+  duration: number;
+}
+
+interface CurriculumModuleDraft {
+  title: string;
+  topics: CurriculumTopicDraft[];
+}
+
+const defaultCurriculumModules: CurriculumModuleDraft[] = [
+  {
+    title: 'Module 1: Foundations',
+    topics: [
+      { title: 'Orientation and course roadmap', duration: 60 },
+      { title: 'Core concepts and terminology', duration: 90 },
+      { title: 'Hands-on practice session', duration: 90 },
+    ],
+  },
+  {
+    title: 'Module 2: Applied Learning',
+    topics: [
+      { title: 'Tools and workflow setup', duration: 90 },
+      { title: 'Guided project walkthrough', duration: 120 },
+      { title: 'Practice and doubt clearing', duration: 90 },
+    ],
+  },
+  {
+    title: 'Module 3: Project and Review',
+    topics: [
+      { title: 'Capstone planning', duration: 90 },
+      { title: 'Project build session', duration: 120 },
+      { title: 'Final review and assessment', duration: 90 },
+    ],
+  },
+];
+
+const createEmptyForm = () => ({
+  title: '',
+  course: '',
+  modules: defaultCurriculumModules.map((module) => ({
+    title: module.title,
+    topics: module.topics.map((topic) => ({ ...topic })),
+  })),
+});
+
 export default function AdminCurriculum() {
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [form, setForm] = useState(createEmptyForm);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const activeBatches = batches.filter((batch) => batch.isActive).length;
   const totalStudents = batches.reduce((sum, batch) => sum + (batch.students?.length || 0), 0);
@@ -27,8 +78,9 @@ export default function AdminCurriculum() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await batchApi.getAll();
-        setBatches(res.data.batches || []);
+        const [batchRes, courseRes] = await Promise.all([batchApi.getAll(), adminApi.getCourses()]);
+        setBatches(batchRes.data.batches || []);
+        setCourses(courseRes.data.courses || []);
       } finally {
         setLoading(false);
       }
@@ -37,6 +89,91 @@ export default function AdminCurriculum() {
     void load();
   }, []);
 
+  const openCreateModal = () => {
+    setForm(createEmptyForm());
+    setError('');
+    setShowCreateModal(true);
+  };
+
+  const updateModule = (moduleIndex: number, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      modules: prev.modules.map((module, index) => index === moduleIndex ? { ...module, title: value } : module),
+    }));
+  };
+
+  const updateTopic = (moduleIndex: number, topicIndex: number, field: keyof CurriculumTopicDraft, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      modules: prev.modules.map((module, index) => {
+        if (index !== moduleIndex) return module;
+        return {
+          ...module,
+          topics: module.topics.map((topic, tIndex) => (
+            tIndex === topicIndex
+              ? { ...topic, [field]: field === 'duration' ? Number(value) || 60 : value }
+              : topic
+          )),
+        };
+      }),
+    }));
+  };
+
+  const addModule = () => {
+    setForm((prev) => ({
+      ...prev,
+      modules: [...prev.modules, { title: `Module ${prev.modules.length + 1}: New Module`, topics: [{ title: 'New class topic', duration: 60 }] }],
+    }));
+  };
+
+  const addTopic = (moduleIndex: number) => {
+    setForm((prev) => ({
+      ...prev,
+      modules: prev.modules.map((module, index) => index === moduleIndex
+        ? { ...module, topics: [...module.topics, { title: 'New class topic', duration: 60 }] }
+        : module),
+    }));
+  };
+
+  const removeTopic = (moduleIndex: number, topicIndex: number) => {
+    setForm((prev) => ({
+      ...prev,
+      modules: prev.modules.map((module, index) => index === moduleIndex
+        ? { ...module, topics: module.topics.filter((_, tIndex) => tIndex !== topicIndex) }
+        : module),
+    }));
+  };
+
+  const removeModule = (moduleIndex: number) => {
+    setForm((prev) => ({ ...prev, modules: prev.modules.filter((_, index) => index !== moduleIndex) }));
+  };
+
+  const handleCreateCurriculum = async () => {
+    setError('');
+    if (!form.title.trim() || !form.course) {
+      setError('Curriculum title and course are required');
+      return;
+    }
+    if (form.modules.length === 0) {
+      setError('Add at least one module');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await curriculumApi.createDefault({
+        title: form.title,
+        course: form.course,
+        modules: form.modules,
+      });
+      setShowCreateModal(false);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create curriculum');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fade-in">
       <div className="page-header">
@@ -44,6 +181,7 @@ export default function AdminCurriculum() {
           <h1 className="page-title">Curriculum</h1>
           <p className="page-subtitle">One batch has one curriculum. Reassigning a template replaces the current batch curriculum for every student in that batch.</p>
         </div>
+        <button className="btn btn-primary" onClick={openCreateModal}>+ Create Curriculum</button>
       </div>
 
       {loading ? (
@@ -64,7 +202,7 @@ export default function AdminCurriculum() {
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Curriculum Control Center</div>
                   <h2 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '10px' }}>Manage program delivery batch by batch</h2>
                   <p style={{ color: 'var(--text-secondary)', maxWidth: '720px' }}>
-                    Choose one curriculum template per batch, then fine-tune class names, dates, and Google Meet links without affecting other batches.
+                    Choose one curriculum template per batch, then fine-tune class names and dates. Zoom meetings are created automatically when you save scheduled topics.
                   </p>
                 </div>
               </div>
@@ -137,6 +275,66 @@ export default function AdminCurriculum() {
           batchName={selectedBatch.name}
           onClose={() => setSelectedBatch(null)}
         />
+      )}
+
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateModal(false); }}>
+          <div className="modal" style={{ maxWidth: '920px' }}>
+            <div className="modal-header">
+              <div>
+                <h2>Create Curriculum</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>Default format is ready. Edit modules and class topics as needed.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>X</button>
+            </div>
+
+            {error && <div className="alert alert-error">{error}</div>}
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Curriculum Name</label>
+                <input className="form-input" placeholder="e.g. Data Analytics with AI" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Course</label>
+                <select className="form-select" value={form.course} onChange={(e) => setForm((prev) => ({ ...prev, course: e.target.value }))}>
+                  <option value="">Select course</option>
+                  {courses.map((course) => <option key={course._id} value={course._id}>{course.title}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {form.modules.map((module, moduleIndex) => (
+                <div key={moduleIndex} className="soft-panel" style={{ padding: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
+                    <input className="form-input" value={module.title} onChange={(e) => updateModule(moduleIndex, e.target.value)} />
+                    <button className="btn btn-danger btn-sm" onClick={() => removeModule(moduleIndex)} disabled={form.modules.length === 1}>Remove</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {module.topics.map((topic, topicIndex) => (
+                      <div key={topicIndex} style={{ display: 'grid', gridTemplateColumns: '1fr 120px auto', gap: '8px', alignItems: 'center' }}>
+                        <input className="form-input" placeholder="Class topic" value={topic.title} onChange={(e) => updateTopic(moduleIndex, topicIndex, 'title', e.target.value)} />
+                        <input className="form-input" type="number" min="1" value={topic.duration} onChange={(e) => updateTopic(moduleIndex, topicIndex, 'duration', e.target.value)} />
+                        <button className="btn btn-secondary btn-sm" onClick={() => removeTopic(moduleIndex, topicIndex)} disabled={module.topics.length === 1}>Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button className="btn btn-secondary btn-sm" style={{ marginTop: '12px' }} onClick={() => addTopic(moduleIndex)}>+ Add Class</button>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn btn-secondary" style={{ marginTop: '14px' }} onClick={addModule}>+ Add Module</button>
+
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)} disabled={saving}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreateCurriculum} disabled={saving}>
+                {saving ? 'Creating...' : 'Create Curriculum'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

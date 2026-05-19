@@ -28,6 +28,7 @@ export const adminApi = {
   createUser: (data: object) => api.post('/admin/users', data),
   updateUser: (id: string, data: object) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
+  getTeachers: () => api.get('/admin/teachers'),
   // Courses
   getCourses: () => api.get('/admin/courses'),
   createCourse: (data: object) => api.post('/admin/courses', data),
@@ -109,6 +110,7 @@ export const sessionApi = {
 
 export const curriculumApi = {
   getDefaults: () => api.get('/curriculums/defaults'),
+  createDefault: (data: object) => api.post('/curriculums/defaults', data),
   getByBatch: (batchId: string) => api.get(`/curriculums/batch/${batchId}`),
   assignTemplate: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}/assign-template`, data),
   updateByBatch: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}`, data),

@@ -17,6 +17,10 @@ interface Stats {
   totalAdmins?: number;
 }
 
+const passwordHelpText = 'Password must be at least 8 characters and include uppercase, lowercase, and a number.';
+const isValidPassword = (password: string) =>
+  password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+
 export default function SuperAdminTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [stats, setStats] = useState<Stats>({ totalTeachers: 0, activeTeachers: 0, totalStudents: 0, totalAdmins: 0 });
@@ -65,6 +69,11 @@ export default function SuperAdminTeachers() {
     try {
       if (!form.name || !form.username || (!editTeacher && !form.password)) {
         setError('Name, username and password are required');
+        setSaving(false);
+        return;
+      }
+      if (form.password && !isValidPassword(form.password)) {
+        setError(passwordHelpText);
         setSaving(false);
         return;
       }
@@ -229,7 +238,8 @@ export default function SuperAdminTeachers() {
             </div>
             <div className="form-group">
               <label className="form-label">{editTeacher ? 'New Password (optional)' : 'Password'}</label>
-              <input className="form-input" type="password" value={form.password} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
+              <input className="form-input" type="password" placeholder={editTeacher ? 'Leave blank to keep current password' : 'e.g. Teacher2026'} value={form.password} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{passwordHelpText}</div>
             </div>
 
             <div className="modal-actions">

@@ -4,6 +4,23 @@ import { useAuth } from '../../context/AuthContext';
 import { adminApi, liveClassApi } from '../../api';
 
 interface Stats { totalStudents: number; totalCourses: number; totalBatches: number; }
+interface LiveClassSummary {
+  classNumber: string;
+  topic: string;
+  course?: { title: string };
+  scheduledAt: string;
+  duration: number;
+  status: string;
+}
+
+const getLiveClassDisplayStatus = (cls: LiveClassSummary, now: Date) => {
+  if (cls.status === 'ended') return 'ended';
+  const startsAt = new Date(cls.scheduledAt);
+  const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
+  if (startsAt <= now && endsAt >= now) return 'live';
+  if (endsAt < now) return 'ended';
+  return 'scheduled';
+};
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -14,8 +31,9 @@ export default function AdminDashboard() {
     ? 'Teacher workspace is ready for batch and curriculum operations.'
     : 'Admin workspace is ready with full student and academic controls.';
   const [stats, setStats] = useState<Stats>({ totalStudents: 0, totalCourses: 0, totalBatches: 0 });
-  const [upcomingClasses, setUpcomingClasses] = useState<unknown[]>([]);
+  const [upcomingClasses, setUpcomingClasses] = useState<LiveClassSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,9 +43,13 @@ export default function AdminDashboard() {
           liveClassApi.getAll(),
         ]);
         setStats(statsRes.data.stats);
-        // Upcoming = scheduled only
-        const all = classesRes.data.liveClasses as { status: string; scheduledAt: string; classNumber: string; topic: string; course: { title: string } }[];
-        setUpcomingClasses(all.filter(c => c.status === 'scheduled').slice(0, 5));
+        const all = classesRes.data.liveClasses as LiveClassSummary[];
+        setUpcomingClasses(
+          all
+            .filter(c => getLiveClassDisplayStatus(c, new Date()) !== 'ended')
+            .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+            .slice(0, 5)
+        );
       } catch (err) {
         console.error(err);
       } finally {
@@ -35,6 +57,11 @@ export default function AdminDashboard() {
       }
     };
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(interval);
   }, []);
 
   if (loading) return (
@@ -103,6 +130,7 @@ export default function AdminDashboard() {
             { label: '+ Add Student', path: `${basePath}/users`, emoji: '👤' },
             { label: '+ Create Batch', path: `${basePath}/batches`, emoji: '🗂️' },
             { label: '+ Create Course', path: `${basePath}/courses`, emoji: '📚' },
+            { label: '+ Create Curriculum', path: `${basePath}/curriculum`, emoji: '🧭' },
             { label: '+ Schedule Class', path: `${basePath}/live-classes`, emoji: '🎥' },
             { label: '+ Add Recording', path: `${basePath}/recorded`, emoji: '🎬' },
             { label: '+ New Assignment', path: `${basePath}/assignments`, emoji: '📝' },
@@ -145,15 +173,18 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {(upcomingClasses as { classNumber: string; topic: string; course: { title: string }; scheduledAt: string; status: string }[]).map((cls, i) => (
-                  <tr key={i}>
-                    <td><strong>{cls.classNumber}</strong></td>
-                    <td>{cls.topic}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{cls.course?.title || '—'}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
-                    <td><span className={`badge badge-${cls.status}`}>{cls.status}</span></td>
-                  </tr>
-                ))}
+                {upcomingClasses.map((cls, i) => {
+                  const displayStatus = getLiveClassDisplayStatus(cls, now);
+                  return (
+                    <tr key={i}>
+                      <td><strong>{cls.classNumber}</strong></td>
+                      <td>{cls.topic}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{cls.course?.title || '—'}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
+                      <td><span className={`badge badge-${displayStatus}`}>{displayStatus === 'live' ? 'going on' : displayStatus}</span></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

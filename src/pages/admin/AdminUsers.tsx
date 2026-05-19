@@ -26,6 +26,10 @@ const emptyForm = {
   enrolledCourse: '',
 };
 
+const passwordHelpText = 'Password must be at least 8 characters and include uppercase, lowercase, and a number.';
+const isValidPassword = (password: string) =>
+  password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -76,6 +80,10 @@ export default function AdminUsers() {
     setError('');
     if (!form.name || !form.username || (!editUser && !form.password)) {
       setError('Name, username and password are required');
+      return;
+    }
+    if (form.password && !isValidPassword(form.password)) {
+      setError(passwordHelpText);
       return;
     }
 
@@ -230,7 +238,8 @@ export default function AdminUsers() {
             </div>
             <div className="form-group">
               <label className="form-label">{editUser ? 'New Password (leave blank to keep)' : 'Password'}</label>
-              <input className="form-input" type="password" placeholder={editUser ? '••••••••' : 'Minimum 6 characters'} value={form.password} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
+              <input className="form-input" type="password" placeholder={editUser ? 'Leave blank to keep current password' : 'e.g. Student2026'} value={form.password} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{passwordHelpText}</div>
             </div>
             <div className="form-group">
               <label className="form-label">Enrolled Course</label>

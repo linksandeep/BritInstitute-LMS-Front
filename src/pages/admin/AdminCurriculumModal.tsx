@@ -190,7 +190,7 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
                         <div
                           key={topic._id || `${moduleIndex}-${topicIndex}`}
                           className="soft-panel"
-                          style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) 1fr 1fr', gap: '12px' }}
+                          style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) 1fr 160px', gap: '12px' }}
                         >
                           <div>
                             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
@@ -226,16 +226,14 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
                           </div>
                           <div>
                             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                              Google Meet Link
+                              Zoom Meeting
                             </label>
-                            <input
-                              type="text"
-                              className="form-input"
-                              style={{ padding: '6px 10px', fontSize: '13px' }}
-                              placeholder="https://meet.google.com/..."
-                              value={topic.meetingLink || ''}
-                              onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'meetingLink', e.target.value)}
-                            />
+                            <div
+                              className={`badge ${topic.meetingLink ? 'badge-zoom' : topic.scheduledAt ? 'badge-scheduled' : 'badge-ended'}`}
+                              style={{ height: '36px', justifyContent: 'center', width: '100%' }}
+                            >
+                              {topic.meetingLink ? 'Zoom ready' : topic.scheduledAt ? 'Creates on save' : 'Not scheduled'}
+                            </div>
                           </div>
                         </div>
                       ))}

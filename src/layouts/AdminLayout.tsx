@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const basePath = '/admin';
-  const workspaceLabel = user?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace';
+  const workspaceLabel = user?.role === 'teacher' ? 'Teacher\nWorkspace' : 'Admin\nWorkspace';
   const roleLabel = user?.role === 'teacher' ? 'Teacher / Mentor' : user?.role === 'superadmin' ? 'Super Admin Access' : 'Admin';
   const showSuperAdminHome = user?.role === 'superadmin';
   const navItems = [
@@ -33,15 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }}>
         <div style={{ padding: '24px 20px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(29,155,240,0.12), rgba(58,183,255,0.04))' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--accent), #3ab7ff)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, boxShadow: '0 10px 24px rgba(29,155,240,0.22)' }}>
-              🎓
-              </div>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '16px' }}>Brit Institute</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{workspaceLabel}</div>
-              </div>
-            </div>
+            <BrandLogo subtitle={workspaceLabel} />
           </div>
         </div>
 

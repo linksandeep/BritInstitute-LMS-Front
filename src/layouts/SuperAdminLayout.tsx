@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 const navItems = [
   { label: 'Dashboard', path: '/superadmin' },
@@ -37,15 +38,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       >
         <div style={{ padding: '24px 20px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(5,150,105,0.12), rgba(16,185,129,0.04))' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, #059669, #10b981)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, boxShadow: '0 10px 24px rgba(16,185,129,0.18)' }}>
-                S
-              </div>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>Brit Institute</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Super Admin</div>
-              </div>
-            </div>
+            <BrandLogo subtitle="Super Admin" />
           </div>
         </div>
 

@@ -4,9 +4,18 @@ import { batchApi, liveClassApi } from '../../api';
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface LiveClass {
   _id: string; classNumber: string; topic: string; meetingLink: string;
-  scheduledAt: string; duration: number; status: string;
+  scheduledAt: string; duration: number; status: string; zoomStartUrl?: string;
   batch: Batch;
 }
+
+const getLiveClassDisplayStatus = (cls: LiveClass, now: Date) => {
+  if (cls.status === 'ended') return 'ended';
+  const startsAt = new Date(cls.scheduledAt);
+  const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
+  if (startsAt <= now && endsAt >= now) return 'live';
+  if (endsAt < now) return 'ended';
+  return 'scheduled';
+};
 
 export default function AdminLiveClasses() {
   const [classes, setClasses] = useState<LiveClass[]>([]);
@@ -14,9 +23,10 @@ export default function AdminLiveClasses() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editClass, setEditClass] = useState<LiveClass | null>(null);
-  const [form, setForm] = useState({ batch: '', classNumber: '', topic: '', meetingLink: '', scheduledAt: '', duration: '60' });
+  const [form, setForm] = useState({ batch: '', classNumber: '', topic: '', scheduledAt: '', duration: '60' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(new Date());
 
   const fetchAll = async () => {
     try {
@@ -28,26 +38,31 @@ export default function AdminLiveClasses() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   const openCreate = () => {
     setEditClass(null);
-    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', meetingLink: '', scheduledAt: '', duration: '60' });
+    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', scheduledAt: '', duration: '60' });
     setError(''); setShowModal(true);
   };
 
   const openEdit = (c: LiveClass) => {
     setEditClass(c);
     const localDT = new Date(c.scheduledAt).toISOString().slice(0, 16);
-    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, meetingLink: c.meetingLink, scheduledAt: localDT, duration: String(c.duration) });
+    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, scheduledAt: localDT, duration: String(c.duration) });
     setError(''); setShowModal(true);
   };
 
   const handleSave = async () => {
     setError('');
-    const { batch, classNumber, topic, meetingLink, scheduledAt, duration } = form;
-    if (!batch || !classNumber || !topic || !meetingLink || !scheduledAt) { setError('All fields are required'); return; }
+    const { batch, classNumber, topic, scheduledAt, duration } = form;
+    if (!batch || !classNumber || !topic || !scheduledAt) { setError('All fields are required'); return; }
     setSaving(true);
     try {
-      const payload = { batch, classNumber, topic, meetingLink, scheduledAt: new Date(scheduledAt).toISOString(), duration: Number(duration) };
+      const payload = { batch, classNumber, topic, scheduledAt: new Date(scheduledAt).toISOString(), duration: Number(duration) };
       if (editClass) await liveClassApi.update(editClass._id, payload);
       else await liveClassApi.create(payload);
       await fetchAll();
@@ -73,7 +88,7 @@ export default function AdminLiveClasses() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Live Classes</h1>
-          <p className="page-subtitle">Manage Google Meet sessions scoped by Batch</p>
+          <p className="page-subtitle">Create Zoom meetings scoped by Batch</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Schedule Class</button>
       </div>
@@ -89,36 +104,45 @@ export default function AdminLiveClasses() {
               <th>Scheduled At</th>
               <th>Duration</th>
               <th>Status</th>
-              <th>Meet Link</th>
+              <th>Zoom Link</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {classes.length === 0 ? (
               <tr><td colSpan={9}><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled.</p></div></td></tr>
-            ) : classes.map(cls => (
-              <tr key={cls._id}>
-                <td><strong>{cls.classNumber}</strong></td>
-                <td>{cls.topic}</td>
-                <td><span className="badge badge-scheduled" style={{background: 'var(--accent-light)', color: 'var(--accent)'}}>{cls.batch?.name}</span></td>
-                <td style={{ color: 'var(--text-muted)' }}>{cls.batch?.course?.title || '—'}</td>
-                <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{cls.duration}m</td>
-                <td><span className={`badge ${statusColor[cls.status] || 'badge-ended'}`}>{cls.status}</span></td>
-                <td>
-                  <a href={cls.meetingLink} target="_blank" rel="noreferrer"
-                    style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
-                    🔗 Open Meet
-                  </a>
-                </td>
-                <td>
-                  <div className="actions-row">
-                    <button className="btn btn-secondary btn-sm" onClick={() => openEdit(cls)}>✏️</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cls._id)}>🗑️</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            ) : classes.map(cls => {
+              const displayStatus = getLiveClassDisplayStatus(cls, now);
+              return (
+                <tr key={cls._id}>
+                  <td><strong>{cls.classNumber}</strong></td>
+                  <td>{cls.topic}</td>
+                  <td><span className="badge badge-scheduled" style={{background: 'var(--accent-light)', color: 'var(--accent)'}}>{cls.batch?.name}</span></td>
+                  <td style={{ color: 'var(--text-muted)' }}>{cls.batch?.course?.title || '—'}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
+                  <td style={{ color: 'var(--text-muted)' }}>{cls.duration}m</td>
+                  <td><span className={`badge ${statusColor[displayStatus] || 'badge-ended'}`}>{displayStatus === 'live' ? 'going on' : displayStatus}</span></td>
+                  <td>
+                    <a href={cls.meetingLink} target="_blank" rel="noreferrer"
+                      style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
+                      🔗 Join Link
+                    </a>
+                    {cls.zoomStartUrl && (
+                      <a href={cls.zoomStartUrl} target="_blank" rel="noreferrer"
+                        style={{ color: 'var(--success)', fontSize: '13px', textDecoration: 'none', display: 'block', marginTop: '6px' }}>
+                        ▶ Start as Host
+                      </a>
+                    )}
+                  </td>
+                  <td>
+                    <div className="actions-row">
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(cls)}>✏️</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cls._id)}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -148,10 +172,6 @@ export default function AdminLiveClasses() {
               <label className="form-label">Topic</label>
               <input className="form-input" placeholder="What will be taught?" value={form.topic} onChange={e => setForm(f => ({ ...f, topic: e.target.value }))} />
             </div>
-            <div className="form-group">
-              <label className="form-label">Google Meet Link</label>
-              <input className="form-input" placeholder="https://meet.google.com/..." value={form.meetingLink} onChange={e => setForm(f => ({ ...f, meetingLink: e.target.value }))} />
-            </div>
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Date & Time</label>
@@ -165,7 +185,7 @@ export default function AdminLiveClasses() {
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : (editClass ? '✓ Update' : '📅 Schedule')}
+                {saving ? 'Saving...' : (editClass ? '✓ Update Zoom Class' : '📅 Create Zoom Class')}
               </button>
             </div>
           </div>

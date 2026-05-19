@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi } from '../../api';
+import BrandLogo from '../../components/BrandLogo';
 
 type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
@@ -227,16 +228,26 @@ export default function StudentDashboard() {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   const now = new Date();
+  const getClassEndAt = (cls: LiveClass) => new Date(new Date(cls.scheduledAt).getTime() + cls.duration * 60 * 1000);
+  const isClassOngoing = (cls: LiveClass) => {
+    const scheduledAt = new Date(cls.scheduledAt);
+    return scheduledAt <= now && getClassEndAt(cls) >= now;
+  };
+  const isClassFinished = (cls: LiveClass) => getClassEndAt(cls) < now;
+
+  const ongoingClasses = liveClasses
+    .filter(isClassOngoing)
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   const upcomingClasses = liveClasses
-    .filter((cls) => new Date(cls.scheduledAt) >= now)
+    .filter((cls) => new Date(cls.scheduledAt) > now)
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
     .slice(0, 5);
   const attendedClasses = liveClasses
-    .filter((cls) => new Date(cls.scheduledAt) < now && cls.attendance === 'present')
+    .filter((cls) => isClassFinished(cls) && cls.attendance === 'present')
     .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     .slice(0, 5);
   const missedClasses = liveClasses
-    .filter((cls) => new Date(cls.scheduledAt) < now && cls.attendance !== 'present')
+    .filter((cls) => isClassFinished(cls) && cls.attendance !== 'present')
     .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     .slice(0, 5);
 
@@ -265,13 +276,7 @@ export default function StudentDashboard() {
       <aside style={{ width: '284px', background: 'linear-gradient(180deg, #f8fbff, #f2f7fd)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
         <div style={{ padding: '28px 22px 18px' }}>
           <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(29,155,240,0.12), rgba(58,183,255,0.04))' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--accent), #3ab7ff)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: '0 10px 24px rgba(29,155,240,0.22)' }}>🎓</div>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text-primary)' }}>Brit Institute</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Student Workspace</div>
-              </div>
-            </div>
+            <BrandLogo subtitle={'Student\nWorkspace'} />
           </div>
         </div>
 
@@ -341,9 +346,9 @@ export default function StudentDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className="metric-grid">
                       <div className="metric-card">
-                        <div className="metric-label">Upcoming</div>
-                        <div className="metric-value" style={{ color: 'var(--info)' }}>{upcomingClasses.length}</div>
-                        <div className="metric-help">Next scheduled classes</div>
+                        <div className="metric-label">Going on</div>
+                        <div className="metric-value" style={{ color: 'var(--danger)' }}>{ongoingClasses.length}</div>
+                        <div className="metric-help">Classes currently live</div>
                       </div>
                       <div className="metric-card">
                         <div className="metric-label">Attended</div>
@@ -361,6 +366,33 @@ export default function StudentDashboard() {
                       <div className="card"><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled for your course yet.</p></div></div>
                     ) : (
                       <>
+                        {ongoingClasses.length > 0 && (
+                          <div className="card section-shell">
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Going On Now</h3>
+                              <span className="badge badge-live">Live</span>
+                            </div>
+                            {ongoingClasses.map(cls => (
+                              <div key={cls._id} style={{ padding: '14px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                      <span className="badge badge-scheduled" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{cls.classNumber}</span>
+                                      <span className="badge badge-live">Going on</span>
+                                      {cls.attendance === 'present' && <span className="badge badge-present">Attendance marked</span>}
+                                    </div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>{cls.topic}</h3>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; Ends {getClassEndAt(cls).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                  </div>
+                                  <button className="btn btn-zoom" onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
+                                    {attendingId === cls._id ? '⏳ Joining...' : '📹 Rejoin Zoom'}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="card section-shell">
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                             <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Upcoming Classes</h3>
@@ -383,7 +415,7 @@ export default function StudentDashboard() {
                                   <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📅 {new Date(cls.scheduledAt).toLocaleString()} &nbsp;•&nbsp; ⏱️ {cls.duration}m</p>
                                 </div>
                                 <button className="btn btn-zoom" style={{ background: 'var(--accent)' }} onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                                  {attendingId === cls._id ? '⏳ Joining...' : '📹 Join Google Meet'}
+                                  {attendingId === cls._id ? '⏳ Joining...' : '📹 Join Zoom'}
                                 </button>
                               </div>
                             </div>
@@ -610,7 +642,7 @@ export default function StudentDashboard() {
                   <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Curriculum</div>
                     <h1 style={{ fontSize: '30px', fontWeight: '800', marginBottom: '8px' }}>Your batch learning roadmap</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Track your modules, class schedule, and Google Meet readiness in one place.</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>Track your modules, class schedule, and Zoom readiness in one place.</p>
                   </div>
                 </div>
 
@@ -650,7 +682,7 @@ export default function StudentDashboard() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                 <span className="badge badge-scheduled">{topic.duration} mins</span>
-                                {topic.meetingLink ? <span className="badge badge-present">Meet Ready</span> : <span className="badge badge-ended">Meet Pending</span>}
+                                {topic.meetingLink ? <span className="badge badge-present">Zoom Ready</span> : <span className="badge badge-ended">Zoom Pending</span>}
                               </div>
                             </div>
                           ))}

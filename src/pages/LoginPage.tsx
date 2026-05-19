@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -40,12 +41,7 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: '420px' }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-          <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, var(--accent), #818cf8)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '28px', boxShadow: '0 8px 32px var(--accent-glow)' }}>
-            🎓
-          </div>
-          <h1 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '6px', background: 'linear-gradient(135deg, #f1f5f9, var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Brit Institute
-          </h1>
+          <BrandLogo variant="hero" align="center" />
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Learning Management System</p>
         </div>
 
