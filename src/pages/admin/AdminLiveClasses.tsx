@@ -25,6 +25,8 @@ export default function AdminLiveClasses() {
   const [editClass, setEditClass] = useState<LiveClass | null>(null);
   const [form, setForm] = useState({ batch: '', classNumber: '', topic: '', scheduledAt: '', duration: '60' });
   const [error, setError] = useState('');
+  const [pageError, setPageError] = useState('');
+  const [pageNotice, setPageNotice] = useState('');
   const [saving, setSaving] = useState(false);
   const [now, setNow] = useState(new Date());
 
@@ -58,6 +60,8 @@ export default function AdminLiveClasses() {
 
   const handleSave = async () => {
     setError('');
+    setPageError('');
+    setPageNotice('');
     const { batch, classNumber, topic, scheduledAt, duration } = form;
     if (!batch || !classNumber || !topic || !scheduledAt) { setError('All fields are required'); return; }
     setSaving(true);
@@ -72,14 +76,27 @@ export default function AdminLiveClasses() {
       const msg = apiError.response?.data?.message;
       if (msg) setError(msg);
       else if (apiError.message === 'Network Error') setError('Cannot reach the backend server. Please start the backend and try again.');
-      else setError('Unable to create Zoom class. Please try again.');
+      else setError(editClass ? 'Unable to update Zoom class. Please try again.' : 'Unable to create Zoom class. Please try again.');
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this class?')) return;
-    await liveClassApi.delete(id);
-    await fetchAll();
+    setPageError('');
+    setPageNotice('');
+    try {
+      const response = await liveClassApi.delete(id);
+      await fetchAll();
+      if (response.data?.warning) {
+        setPageNotice(response.data.message || 'Live class deleted from LMS. Zoom cleanup needs attention.');
+      }
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } }, message?: string };
+      const msg = apiError.response?.data?.message;
+      if (msg) setPageError(msg);
+      else if (apiError.message === 'Network Error') setPageError('Cannot reach the backend server. Please try again.');
+      else setPageError('Unable to delete live class. Please try again.');
+    }
   };
 
   const statusColor: Record<string, string> = { scheduled: 'badge-scheduled', live: 'badge-live', ended: 'badge-ended' };
@@ -95,6 +112,8 @@ export default function AdminLiveClasses() {
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Schedule Class</button>
       </div>
+      {pageError && <div className="alert alert-error">{pageError}</div>}
+      {pageNotice && <div className="alert alert-success">{pageNotice}</div>}
 
       <div className="table-wrapper">
         <table>
