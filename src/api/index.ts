@@ -118,4 +118,10 @@ export const curriculumApi = {
   getMine: () => api.get('/curriculums/me'),
 };
 
+export const studentPortalApi = {
+  getSummary: () => api.get('/student-portal/summary'),
+  createStudyPlan: (data: { prompt: string }) => api.post('/student-portal/study-plan', data),
+  requestCertificate: () => api.post('/student-portal/certificate-request'),
+};
+
 export default api;
