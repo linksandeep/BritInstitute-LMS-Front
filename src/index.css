@@ -732,6 +732,36 @@ tbody td {
   background: #000;
 }
 
+.recorded-player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #05080f;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.recorded-player-frame,
+.recorded-player-video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #05080f;
+}
+
+.recorded-player-empty {
+  padding: 48px 20px;
+  text-align: center;
+  background: #05080f;
+  color: #fff;
+  border-radius: var(--radius);
+}
+
+.recorded-player-modal {
+  max-width: 960px;
+}
+
 /* ─── Student Portal ─────────────────────────────────────────────────────── */
 .student-shell {
   display: flex;

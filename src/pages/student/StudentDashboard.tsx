@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi } from '../../api';
 import BrandLogo from '../../components/BrandLogo';
+import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
 
 type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
@@ -15,6 +16,7 @@ interface LiveClass {
 
 interface Lecture {
   _id: string; title: string; description: string; videoUrl: string; videoType: string; order: number;
+  recordingSource?: string; recordingStatus?: string;
   isCompleted?: boolean; watchDuration?: number;
 }
 
@@ -65,13 +67,9 @@ const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: stri
   youtube:     { icon: 'YT', label: 'YouTube', color: '#dc2626' },
   drive:       { icon: 'DR', label: 'Google Drive', color: '#059669' },
   google_meet: { icon: 'MR', label: 'Meet Recording', color: '#2563eb' },
+  zoom:        { icon: 'ZR', label: 'Zoom Recording', color: '#2563eb' },
   other:       { icon: 'LN', label: 'External Link', color: '#4f46e5' },
 };
-
-function getYouTubeId(url: string): string | null {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=))([^&\s]+)/);
-  return m ? m[1] : null;
-}
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
@@ -483,7 +481,6 @@ export default function StudentDashboard() {
                       <div className="card"><div className="empty-state"><div className="student-empty-mark">RC</div><p>No recorded lectures yet.</p></div></div>
                     ) : lectures.map((l, idx) => {
                       const typeInfo = VIDEO_TYPE_INFO[l.videoType] || VIDEO_TYPE_INFO.other;
-                      const ytId = l.videoType === 'youtube' ? getYouTubeId(l.videoUrl) : null;
                       const isExpanded = expandedLecture === l._id;
                       const currentDuration = watchTime[l._id] || 0;
                       const isCompleted = l.isCompleted || currentDuration >= 600;
@@ -505,14 +502,8 @@ export default function StudentDashboard() {
                              <button className="btn btn-secondary btn-sm" onClick={() => setExpandedLecture(isExpanded ? null : l._id)}>{isExpanded ? 'Collapse' : 'Watch'}</button>
                           </div>
                           {isExpanded && (
-                            <div style={{ marginTop: '20px', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
-                               {l.videoType === 'youtube' && ytId ? (
-                                  <iframe className="video-embed" src={`https://www.youtube.com/embed/${ytId}?autoplay=1&modestbranding=1`} allowFullScreen />
-                               ) : l.videoType === 'drive' ? (
-                                  <iframe src={l.videoUrl.replace('/view', '/preview')} width="100%" height="450" frameBorder="0" allow="autoplay" />
-                               ) : (
-                                 <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>Secure Link: <a href={l.videoUrl} target="_blank" style={{ color: 'var(--accent)' }}>Open Player</a></div>
-                               )}
+                            <div style={{ marginTop: '20px' }}>
+                              <RecordedLecturePlayer lecture={l} />
                             </div>
                           )}
                         </div>

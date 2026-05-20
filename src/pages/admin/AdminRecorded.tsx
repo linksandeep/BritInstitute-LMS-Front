@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { batchApi, recordedApi } from '../../api';
+import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
 
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface Lecture {
   _id: string; title: string; description: string; videoUrl: string;
-  videoType: string; order: number; batch: Batch; createdAt: string;
+  videoType: string; recordingSource?: string; recordingStatus?: string;
+  order: number; batch: Batch; createdAt: string;
 }
 
 const typeLabels: Record<string, { label: string; icon: string }> = {
   youtube:     { label: 'YouTube', icon: '▶️' },
   drive:       { label: 'Google Drive', icon: '📁' },
   google_meet: { icon: '🎥', label: 'Meet Recording' },
+  zoom:        { icon: '🎥', label: 'Zoom Recording' },
   other:       { label: 'Other', icon: '🔗' },
 };
 
@@ -20,9 +23,12 @@ export default function AdminRecorded() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editLecture, setEditLecture] = useState<Lecture | null>(null);
+  const [playerLecture, setPlayerLecture] = useState<Lecture | null>(null);
   const [form, setForm] = useState({ batch: '', title: '', description: '', videoUrl: '', videoType: 'youtube', order: '0' });
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
+  const [syncingZoom, setSyncingZoom] = useState(false);
 
   const fetchAll = async () => {
     try {
@@ -68,6 +74,22 @@ export default function AdminRecorded() {
     await fetchAll();
   };
 
+  const handleSyncZoom = async () => {
+    setNotice('');
+    setError('');
+    setSyncingZoom(true);
+    try {
+      const res = await recordedApi.syncZoom();
+      setNotice(res.data.message || 'Zoom recordings synced.');
+      await fetchAll();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg || 'Unable to sync Zoom recordings');
+    } finally {
+      setSyncingZoom(false);
+    }
+  };
+
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
   return (
@@ -77,8 +99,16 @@ export default function AdminRecorded() {
           <h1 className="page-title">Recorded Lectures</h1>
           <p className="page-subtitle">Add YouTube, Drive or Meeting recording links scoped by Batch</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Add Lecture</button>
+        <div className="actions-row">
+          <button className="btn btn-secondary" onClick={handleSyncZoom} disabled={syncingZoom}>
+            {syncingZoom ? 'Syncing...' : 'Sync Zoom Recordings'}
+          </button>
+          <button className="btn btn-primary" onClick={openCreate}>+ Add Lecture</button>
+        </div>
       </div>
+
+      {notice && <div className="alert alert-success">{notice}</div>}
+      {error && !showModal && <div className="alert alert-error">⚠️ {error}</div>}
 
       {lectures.length === 0 ? (
         <div className="card"><div className="empty-state"><div className="empty-icon">🎬</div><p>No recorded lectures yet.</p></div></div>
@@ -92,7 +122,7 @@ export default function AdminRecorded() {
                 <th>Batch</th>
                 <th>Course</th>
                 <th>Type</th>
-                <th>URL Preview</th>
+                <th>Player</th>
                 <th>Added</th>
                 <th>Actions</th>
               </tr>
@@ -107,7 +137,11 @@ export default function AdminRecorded() {
                     <td><span className="badge badge-scheduled" style={{background: 'var(--accent-light)', color: 'var(--accent)'}}>{l.batch?.name}</span></td>
                     <td style={{ color: 'var(--text-muted)' }}>{l.batch?.course?.title || '—'}</td>
                     <td><span className={`badge badge-${l.videoType}`}>{type.icon} {type.label}</span></td>
-                    <td><a href={l.videoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontSize: '12px', textDecoration: 'none' }}>🔗 Open Link</a></td>
+                    <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setPlayerLecture(l)}>
+                        Play in LMS
+                      </button>
+                    </td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{new Date(l.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className="actions-row">
@@ -171,6 +205,18 @@ export default function AdminRecorded() {
                 {saving ? 'Saving...' : (editLecture ? '✓ Update' : '+ Add Lecture')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {playerLecture && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setPlayerLecture(null); }}>
+          <div className="modal recorded-player-modal">
+            <div className="modal-header">
+              <h2>{playerLecture.title}</h2>
+              <button className="modal-close" onClick={() => setPlayerLecture(null)}>✕</button>
+            </div>
+            <RecordedLecturePlayer lecture={playerLecture} />
           </div>
         </div>
       )}
