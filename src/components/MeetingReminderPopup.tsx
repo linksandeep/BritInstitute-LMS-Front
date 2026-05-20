@@ -127,7 +127,7 @@ export default function MeetingReminderPopup() {
           </div>
         </div>
         <button className="btn btn-zoom meeting-reminder-action" onClick={openMeeting}>
-          {isStaff ? 'Start Zoom Meeting' : isOngoing ? 'Rejoin Zoom' : 'Join Zoom'}
+          {isStaff ? 'Start Zoom Meeting' : isOngoing ? 'Rejoin Class' : 'Join Class'}
         </button>
       </div>
     </div>

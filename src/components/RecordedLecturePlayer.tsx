@@ -5,6 +5,7 @@ interface RecordedLectureLike {
   videoType: string;
   recordingSource?: string;
   recordingStatus?: string;
+  isPlayable?: boolean;
 }
 
 interface RecordedLecturePlayerProps {
@@ -67,7 +68,7 @@ export default function RecordedLecturePlayer({ lecture }: RecordedLecturePlayer
     : lecture.videoUrl.trim();
   const embedUrl = getEmbedUrl(lecture);
 
-  if (isZoomRecording && lecture.recordingStatus !== 'available') {
+  if (isZoomRecording && (lecture.recordingStatus !== 'available' || lecture.isPlayable !== true)) {
     return (
       <div className="recorded-player-empty">
         Zoom recording is still processing. It will appear here automatically when Zoom finishes.
@@ -86,7 +87,9 @@ export default function RecordedLecturePlayer({ lecture }: RecordedLecturePlayer
   if (isZoomRecording || isDirectVideoUrl(videoUrl)) {
     return (
       <div className="recorded-player">
-        <video className="recorded-player-video" controls src={videoUrl} title={lecture.title} />
+        <video className="recorded-player-video" controls preload="metadata" title={lecture.title}>
+          <source src={videoUrl} type={isZoomRecording ? 'video/mp4' : undefined} />
+        </video>
       </div>
     );
   }

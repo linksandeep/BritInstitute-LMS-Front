@@ -17,6 +17,7 @@ interface LiveClass {
 interface Lecture {
   _id: string; title: string; description: string; videoUrl: string; videoType: string; order: number;
   recordingSource?: string; recordingStatus?: string;
+  isPlayable?: boolean;
   isCompleted?: boolean; watchDuration?: number;
 }
 
@@ -67,7 +68,7 @@ const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: stri
   youtube:     { icon: 'YT', label: 'YouTube', color: '#dc2626' },
   drive:       { icon: 'DR', label: 'Google Drive', color: '#059669' },
   google_meet: { icon: 'MR', label: 'Meet Recording', color: '#2563eb' },
-  zoom:        { icon: 'ZR', label: 'Zoom Recording', color: '#2563eb' },
+  zoom:        { icon: 'ZR', label: 'Class Recording', color: '#2563eb' },
   other:       { icon: 'LN', label: 'External Link', color: '#4f46e5' },
 };
 
@@ -376,7 +377,7 @@ export default function StudentDashboard() {
                                     <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Starts {new Date(cls.scheduledAt).toLocaleString()} • Ends {getClassEndAt(cls).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
                                   <button className="btn btn-zoom" onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                                    {attendingId === cls._id ? 'Joining...' : 'Rejoin Zoom'}
+                                    {attendingId === cls._id ? 'Joining...' : 'Rejoin Class'}
                                   </button>
                                 </div>
                               </div>
@@ -406,7 +407,7 @@ export default function StudentDashboard() {
                                   <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Starts {new Date(cls.scheduledAt).toLocaleString()} • Duration {cls.duration}m</p>
                                 </div>
                                 <button className="btn btn-zoom" style={{ background: 'var(--accent)' }} onClick={() => handleJoinMeet(cls)} disabled={!!attendingId}>
-                                  {attendingId === cls._id ? 'Joining...' : 'Join Zoom'}
+                                  {attendingId === cls._id ? 'Joining...' : 'Join Class'}
                                 </button>
                               </div>
                             </div>
@@ -664,7 +665,7 @@ export default function StudentDashboard() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                 <span className="badge badge-scheduled">{topic.duration} mins</span>
-                                {topic.meetingLink ? <span className="badge badge-present">Zoom Ready</span> : <span className="badge badge-ended">Zoom Pending</span>}
+                                {topic.meetingLink ? <span className="badge badge-present">Class Ready</span> : <span className="badge badge-ended">Class Pending</span>}
                               </div>
                             </div>
                           ))}

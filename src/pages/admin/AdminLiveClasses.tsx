@@ -135,6 +135,7 @@ export default function AdminLiveClasses() {
               <tr><td colSpan={9}><div className="empty-state"><div className="empty-icon">🎥</div><p>No live classes scheduled.</p></div></td></tr>
             ) : classes.map(cls => {
               const displayStatus = getLiveClassDisplayStatus(cls, now);
+              const canOpenZoom = displayStatus !== 'ended';
               return (
                 <tr key={cls._id}>
                   <td><strong>{cls.classNumber}</strong></td>
@@ -145,15 +146,23 @@ export default function AdminLiveClasses() {
                   <td style={{ color: 'var(--text-muted)' }}>{cls.duration}m</td>
                   <td><span className={`badge ${statusColor[displayStatus] || 'badge-ended'}`}>{displayStatus === 'live' ? 'going on' : displayStatus}</span></td>
                   <td>
-                    <a href={cls.meetingLink} target="_blank" rel="noreferrer"
-                      style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
-                      🔗 Join Link
-                    </a>
-                    {cls.zoomStartUrl && (
-                      <a href={cls.zoomStartUrl} target="_blank" rel="noreferrer"
-                        style={{ color: 'var(--success)', fontSize: '13px', textDecoration: 'none', display: 'block', marginTop: '6px' }}>
-                        ▶ Start as Host
-                      </a>
+                    {canOpenZoom ? (
+                      <>
+                        <a href={cls.meetingLink} target="_blank" rel="noreferrer"
+                          style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
+                          🔗 Join Link
+                        </a>
+                        {cls.zoomStartUrl && (
+                          <a href={cls.zoomStartUrl} target="_blank" rel="noreferrer"
+                            style={{ color: 'var(--success)', fontSize: '13px', textDecoration: 'none', display: 'block', marginTop: '6px' }}>
+                            ▶ Start as Host
+                          </a>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                        Class ended
+                      </span>
                     )}
                   </td>
                   <td>

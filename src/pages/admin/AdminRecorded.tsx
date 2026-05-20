@@ -6,6 +6,7 @@ interface Batch { _id: string; name: string; course?: { title: string } }
 interface Lecture {
   _id: string; title: string; description: string; videoUrl: string;
   videoType: string; recordingSource?: string; recordingStatus?: string;
+  isPlayable?: boolean;
   order: number; batch: Batch; createdAt: string;
 }
 
