@@ -6,6 +6,7 @@ import BrandLogo from '../components/BrandLogo';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, login } = useAuth();
@@ -37,29 +38,45 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'radial-gradient(ellipse at top left, rgba(99,102,241,0.15) 0%, var(--bg-primary) 60%)' }}>
-      <div style={{ width: '100%', maxWidth: '420px' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-          <BrandLogo variant="hero" align="center" />
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Learning Management System</p>
-        </div>
+    <main className="login-shell">
+      <section className="login-hero" aria-label="Brit Institute LMS welcome">
+        <div className="login-hero-card">
+          <BrandLogo subtitle="Career LMS" />
+          <div className="login-hero-copy">
+            <p className="login-kicker">Smart LMS for career growth</p>
+            <h1>Learn, practise, and get ready for your next job.</h1>
+            <p>Track classes, assignments, mock interviews, resume work, and placement progress from one friendly student portal.</p>
+          </div>
 
-        {/* Card */}
-        <div className="glass-card" style={{ padding: '36px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', color: 'var(--text-primary)' }}>
-            Sign In to Your Account
-          </h2>
+          <div className="login-feature-strip" aria-label="Student success tools">
+            <span>Live classes</span>
+            <span>Assignments</span>
+            <span>Resume work</span>
+            <span>Placement progress</span>
+          </div>
+        </div>
+      </section>
+
+      <aside className="login-panel" aria-label="Sign in form">
+        <div className="login-card">
+          <div className="login-card-header">
+            <BrandLogo subtitle="LMS Portal" />
+            <div>
+              <p className="login-card-eyebrow">Secure access</p>
+              <h2>Enter your career dashboard</h2>
+              <p>Continue to classes, assignments, placement tools, and student progress.</p>
+            </div>
+          </div>
 
           {error && (
             <div className="alert alert-error">
-              ⚠️ {error}
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Username</label>
+              <label className="form-label" htmlFor="username">Username</label>
               <input
                 id="username"
                 className="form-input"
@@ -72,36 +89,65 @@ export default function LoginPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Password</label>
-              <input
-                id="password"
-                className="form-input"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+              <label className="form-label" htmlFor="password">Password</label>
+              <div className="password-field">
+                <input
+                  id="password"
+                  className="form-input"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M9.9 5.2A9.8 9.8 0 0 1 12 5c5 0 8.5 4.4 9.6 6a12.8 12.8 0 0 1-3 3.5" />
+                      <path d="M6.4 6.6A13.3 13.3 0 0 0 2.4 12c1.1 1.6 4.6 6 9.6 6 1.5 0 2.9-.4 4.1-1" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.4 12S5.9 6 12 6s9.6 6 9.6 6-3.5 6-9.6 6-9.6-6-9.6-6Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             <button
               id="login-btn"
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '15px', marginTop: '8px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: '15px', marginTop: '6px' }}
               disabled={loading}
             >
               {loading ? (
                 <><span className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} /> Signing in...</>
-              ) : '→ Sign In'}
+              ) : 'Sign In'}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <p className="login-help-text">
             Account credentials are provided by your teacher, admin, or super admin
           </p>
+
+          <div className="login-trust-row" aria-label="Portal capabilities">
+            <span>Live LMS</span>
+            <span>Placement tools</span>
+            <span>Progress AI</span>
+          </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </main>
   );
 }
