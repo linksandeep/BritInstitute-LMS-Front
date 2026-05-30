@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const showSuperAdminHome = user?.role === 'superadmin';
   const navItems = [
     { icon: '📊', label: 'Dashboard', path: basePath },
+    { icon: '📈', label: 'Activity', path: `${basePath}/activity` },
     { icon: '🗂️', label: 'Batches', path: `${basePath}/batches` },
     { icon: '🧭', label: 'Curriculum', path: `${basePath}/curriculum` },
     { icon: '👥', label: 'Students', path: `${basePath}/users` },

@@ -18,6 +18,7 @@ import AdminAssignments from './pages/admin/AdminAssignments';
 import AdminBatches from './pages/admin/AdminBatches';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminCurriculum from './pages/admin/AdminCurriculum';
+import AdminActivity from './pages/admin/AdminActivity';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SuperAdminTeachers from './pages/superadmin/SuperAdminTeachers';
 
@@ -62,6 +63,9 @@ function AppRoutes() {
       <Route path="/admin" element={
         <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminDashboard /></AdminShell></ProtectedRoute>
       } />
+      <Route path="/admin/activity" element={
+        <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminActivity /></AdminShell></ProtectedRoute>
+      } />
       <Route path="/admin/users" element={
         <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminUsers /></AdminShell></ProtectedRoute>
       } />
@@ -88,6 +92,7 @@ function AppRoutes() {
       } />
 
       <Route path="/teacher" element={<Navigate to="/admin" replace />} />
+      <Route path="/teacher/activity" element={<Navigate to="/admin/activity" replace />} />
       <Route path="/teacher/users" element={<Navigate to="/admin/users" replace />} />
       <Route path="/teacher/courses" element={<Navigate to="/admin/courses" replace />} />
       <Route path="/teacher/live-classes" element={<Navigate to="/admin/live-classes" replace />} />

@@ -19,6 +19,9 @@ export const authApi = {
   login: (username: string, password: string) =>
     api.post('/auth/login', { username, password }),
   getMe: () => api.get('/auth/me'),
+  getSessionConfig: () => api.get('/auth/session-config'),
+  heartbeat: () => api.post('/auth/heartbeat'),
+  logout: (reason: 'manual' | 'inactivity' = 'manual') => api.post('/auth/logout', { reason }),
 };
 
 // Admin
@@ -36,6 +39,7 @@ export const adminApi = {
   deleteCourse: (id: string) => api.delete(`/admin/courses/${id}`),
   // Stats
   getStats: () => api.get('/admin/stats'),
+  getActivity: () => api.get('/admin/activity'),
 };
 
 export const superAdminApi = {
