@@ -71,9 +71,10 @@ export default function MeetingReminderPopup() {
         if (dismissed.includes(cls._id) || cls.status === 'ended') return false;
 
         const startsAt = new Date(cls.scheduledAt);
-        const reminderAt = new Date(startsAt.getTime() - REMINDER_BEFORE_MINUTES * 60 * 1000);
         const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
-        return now >= reminderAt && now <= endsAt;
+        if (cls.status !== 'live' && endsAt < now) return false;
+        const reminderAt = new Date(startsAt.getTime() - REMINDER_BEFORE_MINUTES * 60 * 1000);
+        return now >= reminderAt;
       })
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
   }, [classes, dismissed, now]);
@@ -82,7 +83,7 @@ export default function MeetingReminderPopup() {
 
   const startsAt = new Date(reminderClass.scheduledAt);
   const endsAt = new Date(startsAt.getTime() + reminderClass.duration * 60 * 1000);
-  const isOngoing = startsAt <= now && endsAt >= now;
+  const isOngoing = reminderClass.status === 'live' || (startsAt <= now && endsAt >= now);
   const meetingUrl = isStaff && reminderClass.zoomStartUrl ? reminderClass.zoomStartUrl : reminderClass.meetingLink;
 
   const closeReminder = () => {
@@ -107,7 +108,7 @@ export default function MeetingReminderPopup() {
       <div className="meeting-reminder">
         <button className="modal-close meeting-reminder-close" aria-label="Close meeting reminder" onClick={closeReminder}>✕</button>
         <div className="meeting-reminder-status">
-          <span className={`badge ${isOngoing ? 'badge-live' : 'badge-scheduled'}`}>
+          <span className={`badge ${isOngoing ? 'badge-live' : 'badge-overdue'}`}>
             {isOngoing ? 'Going on' : 'Starting soon'}
           </span>
         </div>
@@ -123,7 +124,7 @@ export default function MeetingReminderPopup() {
           </div>
           <div>
             <span>Ends</span>
-            <strong>{endsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            <strong>{reminderClass.status === 'ended' ? 'Closed' : endsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
           </div>
         </div>
         <button className="btn btn-zoom meeting-reminder-action" onClick={openMeeting}>

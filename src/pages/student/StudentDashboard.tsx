@@ -295,15 +295,15 @@ export default function StudentDashboard() {
   const getClassEndAt = (cls: LiveClass) => new Date(new Date(cls.scheduledAt).getTime() + cls.duration * 60 * 1000);
   const isClassOngoing = (cls: LiveClass) => {
     const scheduledAt = new Date(cls.scheduledAt);
-    return scheduledAt <= now && getClassEndAt(cls) >= now;
+    return cls.status !== 'ended' && (cls.status === 'live' || (scheduledAt <= now && getClassEndAt(cls) >= now));
   };
-  const isClassFinished = (cls: LiveClass) => getClassEndAt(cls) < now;
+  const isClassFinished = (cls: LiveClass) => cls.status === 'ended' || (cls.status !== 'live' && getClassEndAt(cls) < now);
 
   const ongoingClasses = liveClasses
     .filter(isClassOngoing)
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   const upcomingClasses = liveClasses
-    .filter((cls) => new Date(cls.scheduledAt) > now)
+    .filter((cls) => cls.status !== 'ended' && new Date(cls.scheduledAt) > now)
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
     .slice(0, 5);
   const attendedClasses = liveClasses
@@ -446,7 +446,7 @@ export default function StudentDashboard() {
           <h3>{cls.topic}</h3>
           <p>
             {state === 'live'
-              ? `Started ${formatDateTime(cls.scheduledAt)} • Ends ${formatTime(getClassEndAt(cls))}`
+              ? `Started ${formatDateTime(cls.scheduledAt)} • Live until teacher ends the session`
               : `${formatDateTime(cls.scheduledAt)} • ${cls.duration} minutes`}
           </p>
         </div>

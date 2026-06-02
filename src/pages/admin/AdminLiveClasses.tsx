@@ -10,11 +10,22 @@ interface LiveClass {
 
 const getLiveClassDisplayStatus = (cls: LiveClass, now: Date) => {
   if (cls.status === 'ended') return 'ended';
+  if (cls.status === 'live') return 'live';
   const startsAt = new Date(cls.scheduledAt);
   const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
-  if (startsAt <= now && endsAt >= now) return 'live';
   if (endsAt < now) return 'ended';
+  const readyAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
+  if (readyAt <= now) return 'ready';
   return 'scheduled';
+};
+
+const canStartClass = (cls: LiveClass, now: Date) => {
+  if (cls.status === 'ended' || cls.status === 'live') return false;
+  const startsAt = new Date(cls.scheduledAt);
+  const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
+  if (endsAt < now) return false;
+  const readyAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
+  return readyAt <= now;
 };
 
 export default function AdminLiveClasses() {
@@ -99,7 +110,35 @@ export default function AdminLiveClasses() {
     }
   };
 
-  const statusColor: Record<string, string> = { scheduled: 'badge-scheduled', live: 'badge-live', ended: 'badge-ended' };
+  const handleStartClass = async (cls: LiveClass) => {
+    setPageError('');
+    setPageNotice('');
+    try {
+      const response = await liveClassApi.start(cls._id);
+      const liveClass = response.data.liveClass || cls;
+      await fetchAll();
+      window.open(liveClass.zoomStartUrl || liveClass.meetingLink || cls.zoomStartUrl || cls.meetingLink, '_blank', 'noopener,noreferrer');
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } }, message?: string };
+      setPageError(apiError.response?.data?.message || 'Unable to start this class. Please try again.');
+    }
+  };
+
+  const handleEndClass = async (cls: LiveClass) => {
+    if (!confirm('End this live class and close the notification for students?')) return;
+    setPageError('');
+    setPageNotice('');
+    try {
+      await liveClassApi.end(cls._id);
+      await fetchAll();
+      setPageNotice('Class ended. Live notifications have been closed and attendance has been finalized.');
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } }, message?: string };
+      setPageError(apiError.response?.data?.message || 'Unable to end this class. Please try again.');
+    }
+  };
+
+  const statusColor: Record<string, string> = { scheduled: 'badge-scheduled', ready: 'badge-overdue', live: 'badge-live', ended: 'badge-ended' };
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
@@ -136,6 +175,7 @@ export default function AdminLiveClasses() {
             ) : classes.map(cls => {
               const displayStatus = getLiveClassDisplayStatus(cls, now);
               const canOpenZoom = displayStatus !== 'ended';
+              const startEnabled = canStartClass(cls, now);
               return (
                 <tr key={cls._id}>
                   <td><strong>{cls.classNumber}</strong></td>
@@ -152,12 +192,6 @@ export default function AdminLiveClasses() {
                           style={{ color: 'var(--accent)', fontSize: '13px', textDecoration: 'none' }}>
                           🔗 Join Link
                         </a>
-                        {cls.zoomStartUrl && (
-                          <a href={cls.zoomStartUrl} target="_blank" rel="noreferrer"
-                            style={{ color: 'var(--success)', fontSize: '13px', textDecoration: 'none', display: 'block', marginTop: '6px' }}>
-                            ▶ Start as Host
-                          </a>
-                        )}
                       </>
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
@@ -167,6 +201,16 @@ export default function AdminLiveClasses() {
                   </td>
                   <td>
                     <div className="actions-row">
+                      {cls.status === 'live' ? (
+                        <>
+                          <button className="btn btn-primary btn-sm" onClick={() => handleStartClass(cls)}>Open</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleEndClass(cls)}>End</button>
+                        </>
+                      ) : cls.status !== 'ended' ? (
+                        <button className="btn btn-primary btn-sm" onClick={() => handleStartClass(cls)} disabled={!startEnabled}>
+                          Start Class
+                        </button>
+                      ) : null}
                       <button className="btn btn-secondary btn-sm" onClick={() => openEdit(cls)}>✏️</button>
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cls._id)}>🗑️</button>
                     </div>

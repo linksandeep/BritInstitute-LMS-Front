@@ -15,10 +15,11 @@ interface LiveClassSummary {
 
 const getLiveClassDisplayStatus = (cls: LiveClassSummary, now: Date) => {
   if (cls.status === 'ended') return 'ended';
+  if (cls.status === 'live') return 'live';
   const startsAt = new Date(cls.scheduledAt);
   const endsAt = new Date(startsAt.getTime() + cls.duration * 60 * 1000);
-  if (startsAt <= now && endsAt >= now) return 'live';
   if (endsAt < now) return 'ended';
+  if (startsAt <= now) return 'live';
   return 'scheduled';
 };
 

@@ -57,6 +57,8 @@ export const liveClassApi = {
   getMine: () => api.get('/live-classes/me'),
   create: (data: object) => api.post('/live-classes', data),
   update: (id: string, data: object) => api.put(`/live-classes/${id}`, data),
+  start: (id: string) => api.patch(`/live-classes/${id}/start`),
+  end: (id: string) => api.patch(`/live-classes/${id}/end`),
   delete: (id: string) => api.delete(`/live-classes/${id}`),
   attend: (id: string) => api.post(`/live-classes/${id}/attend`),
   getClassAttendance: (classId: string) => api.get(`/live-classes/attendance/class/${classId}`),
@@ -114,8 +116,12 @@ export const sessionApi = {
 };
 
 export const curriculumApi = {
-  getDefaults: () => api.get('/curriculums/defaults'),
+  getDefaults: (includeArchived = false) => api.get('/curriculums/defaults', { params: includeArchived ? { includeArchived: true } : undefined }),
   createDefault: (data: object) => api.post('/curriculums/defaults', data),
+  updateDefault: (id: string, data: object) => api.put(`/curriculums/defaults/${id}`, data),
+  duplicateDefault: (id: string) => api.post(`/curriculums/defaults/${id}/duplicate`),
+  archiveDefault: (id: string) => api.patch(`/curriculums/defaults/${id}/archive`),
+  deleteDefault: (id: string) => api.delete(`/curriculums/defaults/${id}`),
   getByBatch: (batchId: string) => api.get(`/curriculums/batch/${batchId}`),
   assignTemplate: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}/assign-template`, data),
   updateByBatch: (batchId: string, data: object) => api.put(`/curriculums/batch/${batchId}`, data),
