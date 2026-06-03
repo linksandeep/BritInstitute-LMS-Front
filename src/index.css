@@ -423,6 +423,7 @@ body {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 7px 12px;
   border-radius: 999px;
   background: rgba(4, 14, 36, 0.28);
@@ -430,6 +431,9 @@ body {
   color: rgba(255, 255, 255, 0.84);
   font-size: 12px;
   font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
 }
 
 .login-panel {
@@ -624,6 +628,145 @@ tbody td {
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--border-subtle);
+}
+
+.student-booking-modal .modal-header {
+  align-items: flex-start;
+}
+
+.student-modal-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.student-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.student-slot-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.student-slot-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.student-slot-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.student-slot-legend i.available { background: #1d9bf0; }
+.student-slot-legend i.booked { background: #f87171; }
+
+.student-slot-empty {
+  border: 1px dashed rgba(36, 87, 211, 0.22);
+  border-radius: 14px;
+  background: #f7fbff;
+  color: var(--text-secondary);
+  padding: 16px;
+  text-align: center;
+}
+
+.student-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.student-slot-btn {
+  border: 1px solid rgba(36, 87, 211, 0.18);
+  border-radius: 14px;
+  background: #f7fbff;
+  color: #10233e;
+  cursor: pointer;
+  min-height: 66px;
+  padding: 10px;
+  text-align: left;
+  transition: transform var(--transition), border-color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+
+.student-slot-btn span,
+.student-slot-btn small {
+  display: block;
+}
+
+.student-slot-btn span {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.student-slot-btn small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.student-slot-btn.available:hover,
+.student-slot-btn.current:hover {
+  border-color: #1d9bf0;
+  box-shadow: 0 12px 24px rgba(29, 155, 240, 0.12);
+  transform: translateY(-1px);
+}
+
+.student-slot-btn.selected {
+  background: linear-gradient(135deg, #2457d3, #1d9bf0);
+  border-color: transparent;
+  color: #fff;
+}
+
+.student-slot-btn.selected small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.student-slot-btn.booked,
+.student-slot-btn.past {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.student-slot-btn.booked small { color: #ef4444; }
+.student-slot-btn.past small { color: #94a3b8; }
+
+.student-slot-btn.current {
+  background: #eff6ff;
+  border-color: rgba(36, 87, 211, 0.28);
+}
+
+.student-slot-selection {
+  margin-top: 12px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+@media (max-width: 640px) {
+  .student-slot-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-slot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .meeting-reminder-overlay {
@@ -2290,6 +2433,7 @@ tbody td {
   min-height: 38px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -2297,6 +2441,9 @@ tbody td {
   color: rgba(255, 255, 255, 0.86);
   font-size: 13px;
   font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
 }
 
 .login-panel {
@@ -2401,6 +2548,10 @@ tbody td {
   .login-feature-strip {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .login-feature-strip span {
+    width: 100%;
   }
 
   .login-card {

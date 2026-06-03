@@ -44,6 +44,13 @@ interface Booking {
   meetingLink?: string;
 }
 
+interface MentorSlot {
+  dateTime: string;
+  label: string;
+  status: 'available' | 'booked' | 'past';
+  bookingId?: string;
+}
+
 interface CurriculumTopic {
   _id: string;
   title: string;
@@ -124,6 +131,12 @@ const formatShortDate = (value: string) =>
     year: 'numeric',
   });
 
+const toDateInputValue = (value?: string | Date) => {
+  const date = value ? new Date(value) : new Date();
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+  return local.toISOString().slice(0, 10);
+};
+
 const formatTime = (date: Date) =>
   date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -151,7 +164,10 @@ export default function StudentDashboard() {
   const [watchTime, setWatchTime] = useState<Record<string, number>>({});
 
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingForm, setBookingForm] = useState({ mentor: '', topic: '', dateTime: '' });
+  const [reschedulingBooking, setReschedulingBooking] = useState<Booking | null>(null);
+  const [bookingForm, setBookingForm] = useState({ mentor: '', topic: '', date: toDateInputValue(), dateTime: '' });
+  const [mentorSlots, setMentorSlots] = useState<MentorSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [bookingSaving, setBookingSaving] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [submissionModal, setSubmissionModal] = useState<Assignment | null>(null);
@@ -218,6 +234,33 @@ export default function StudentDashboard() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [expandedLecture]);
 
+  useEffect(() => {
+    if (!showBookingModal || !bookingForm.mentor || !bookingForm.date) {
+      setMentorSlots([]);
+      return;
+    }
+
+    let ignore = false;
+    setSlotsLoading(true);
+    setBookingError('');
+
+    sessionApi.getAvailability(bookingForm.mentor, bookingForm.date)
+      .then((res) => {
+        if (!ignore) setMentorSlots(res.data.slots || []);
+      })
+      .catch((err: any) => {
+        if (!ignore) {
+          setMentorSlots([]);
+          setBookingError(err.response?.data?.message || 'Unable to load available slots.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) setSlotsLoading(false);
+      });
+
+    return () => { ignore = true; };
+  }, [bookingForm.date, bookingForm.mentor, showBookingModal]);
+
   const handleJoinMeet = async (cls: LiveClass) => {
     setAttendingId(cls._id);
     try {
@@ -231,17 +274,58 @@ export default function StudentDashboard() {
     }
   };
 
+  const closeBookingModal = () => {
+    setShowBookingModal(false);
+    setReschedulingBooking(null);
+    setBookingError('');
+    setMentorSlots([]);
+    setBookingForm({ mentor: '', topic: '', date: toDateInputValue(), dateTime: '' });
+  };
+
+  const openBookingModal = (booking?: Booking) => {
+    setBookingError('');
+    setMentorSlots([]);
+    setReschedulingBooking(booking || null);
+    setBookingForm({
+      mentor: booking?.mentor?._id || '',
+      topic: booking?.topic || '',
+      date: toDateInputValue(booking?.dateTime),
+      dateTime: booking?.dateTime || '',
+    });
+    setShowBookingModal(true);
+  };
+
+  const handleBookingFieldChange = (field: 'mentor' | 'topic' | 'date', value: string) => {
+    setBookingError('');
+    setBookingForm(prev => ({
+      ...prev,
+      [field]: value,
+      dateTime: field === 'topic' ? prev.dateTime : '',
+    }));
+  };
+
   const handleCreateBooking = async () => {
     if (!bookingForm.mentor || !bookingForm.topic || !bookingForm.dateTime) {
-      setBookingError('Please fill all fields');
+      setBookingError('Please choose a mentor, topic, date, and available time slot.');
       return;
     }
     setBookingSaving(true); setBookingError('');
     try {
-      await sessionApi.create(bookingForm);
+      const payload = {
+        mentor: bookingForm.mentor,
+        topic: bookingForm.topic,
+        dateTime: bookingForm.dateTime,
+        duration: 30,
+      };
+
+      if (reschedulingBooking) {
+        await sessionApi.reschedule(reschedulingBooking._id, payload);
+      } else {
+        await sessionApi.create(payload);
+      }
+
       await fetchData();
-      setShowBookingModal(false);
-      setBookingForm({ mentor: '', topic: '', dateTime: '' });
+      closeBookingModal();
     } catch (err: any) {
       setBookingError(err.response?.data?.message || 'Failed to book session');
     } finally {
@@ -372,6 +456,7 @@ export default function StudentDashboard() {
       { title: 'Mentoring', action: mentoringSessions > 0 ? 'Review mentor feedback' : 'Book a doubt clearing session' },
       { title: 'Class readiness', action: nextClass ? `Prepare for ${nextClass.classNumber}` : 'Watch for the next schedule' },
     ];
+  const selectedSlot = mentorSlots.find(slot => slot.dateTime === bookingForm.dateTime);
 
   const requestStudyPlan = async (prompt: string) => {
     const cleanPrompt = prompt.trim();
@@ -845,7 +930,7 @@ export default function StudentDashboard() {
           <h1>One-to-one sessions</h1>
           <p>Book personal guidance for doubts, projects, interview prep, and portfolio feedback.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setBookingError(''); setShowBookingModal(true); }}>Book New Session</button>
+        <button className="btn btn-primary" onClick={() => openBookingModal()}>Book New Session</button>
       </section>
 
       <div className="student-stack">
@@ -854,7 +939,7 @@ export default function StudentDashboard() {
             <div className="student-empty-mark">MT</div>
             <h3>No sessions scheduled</h3>
             <p>Request a focused mentor session whenever you need help with a concept or project.</p>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowBookingModal(true)}>Book First Session</button>
+            <button className="btn btn-primary btn-sm" onClick={() => openBookingModal()}>Book First Session</button>
           </div>
         ) : bookings.map(booking => (
           <article key={booking._id} className={`student-session-card ${booking.status}`}>
@@ -873,7 +958,10 @@ export default function StudentDashboard() {
                 <button className="btn btn-primary btn-sm" onClick={() => window.open(booking.meetingLink, '_blank')}>Join Session</button>
               )}
               {(booking.status === 'pending' || booking.status === 'accepted') && (
-                <button className="btn btn-danger btn-sm" onClick={() => handleCancelBooking(booking._id)}>Cancel</button>
+                <>
+                  <button className="btn btn-secondary btn-sm" onClick={() => openBookingModal(booking)}>Reschedule</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleCancelBooking(booking._id)}>Cancel</button>
+                </>
               )}
             </div>
           </article>
@@ -1114,32 +1202,92 @@ export default function StudentDashboard() {
       </main>
 
       {showBookingModal && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowBookingModal(false); }}>
-          <div className="modal" style={{ maxWidth: '480px' }}>
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeBookingModal(); }}>
+          <div className="modal student-booking-modal" style={{ maxWidth: '640px' }}>
             <div className="modal-header">
-              <h2>Book 1:1 Session</h2>
-              <button className="modal-close" onClick={() => setShowBookingModal(false)}>X</button>
+              <div>
+                <h2>{reschedulingBooking ? 'Reschedule 1:1 Session' : 'Book 1:1 Session'}</h2>
+                <p className="student-modal-subtitle">Pick one available mentor slot. Booked slots are blocked automatically.</p>
+              </div>
+              <button className="modal-close" onClick={closeBookingModal}>X</button>
             </div>
             {bookingError && <div className="alert alert-error">{bookingError}</div>}
             <div className="form-group">
               <label className="form-label">Select Mentor</label>
-              <select className="form-select" value={bookingForm.mentor} onChange={e => setBookingForm(f => ({ ...f, mentor: e.target.value }))}>
+              <select
+                className="form-select"
+                value={bookingForm.mentor}
+                onChange={e => handleBookingFieldChange('mentor', e.target.value)}
+              >
                 <option value="">Select your mentor</option>
                 {mentors.map(m => <option key={m._id} value={m._id}>{m.name} (@{m.username})</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">What do you want to discuss?</label>
-              <input className="form-input" placeholder="Example: Python basics doubt" value={bookingForm.topic} onChange={e => setBookingForm(f => ({ ...f, topic: e.target.value }))} />
+              <input
+                className="form-input"
+                placeholder="Example: Python basics doubt"
+                value={bookingForm.topic}
+                onChange={e => handleBookingFieldChange('topic', e.target.value)}
+              />
             </div>
             <div className="form-group">
-              <label className="form-label">Preferred Date & Time</label>
-              <input type="datetime-local" className="form-input" value={bookingForm.dateTime} onChange={e => setBookingForm(f => ({ ...f, dateTime: e.target.value }))} />
+              <label className="form-label">Preferred Date</label>
+              <input
+                type="date"
+                className="form-input"
+                min={toDateInputValue()}
+                value={bookingForm.date}
+                onChange={e => handleBookingFieldChange('date', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <div className="student-slot-header">
+                <label className="form-label">Available Time Slots</label>
+                <div className="student-slot-legend">
+                  <span><i className="available" /> Available</span>
+                  <span><i className="booked" /> Booked</span>
+                </div>
+              </div>
+              {!bookingForm.mentor ? (
+                <div className="student-slot-empty">Select a mentor to see availability.</div>
+              ) : slotsLoading ? (
+                <div className="student-slot-empty">Loading available slots...</div>
+              ) : mentorSlots.length === 0 ? (
+                <div className="student-slot-empty">No slots found for this date.</div>
+              ) : (
+                <div className="student-slot-grid">
+                  {mentorSlots.map(slot => {
+                    const selected = bookingForm.dateTime === slot.dateTime;
+                    const ownSlot = Boolean(reschedulingBooking && slot.bookingId === reschedulingBooking._id);
+                    const unavailable = slot.status !== 'available' && !ownSlot;
+                    return (
+                      <button
+                        key={slot.dateTime}
+                        type="button"
+                        className={`student-slot-btn ${ownSlot ? 'current' : slot.status}${selected ? ' selected' : ''}`}
+                        disabled={unavailable}
+                        onClick={() => setBookingForm(prev => ({ ...prev, dateTime: slot.dateTime }))}
+                        title={ownSlot ? 'Your current session slot' : slot.status === 'booked' ? 'This slot is already occupied' : slot.status === 'past' ? 'Past slots cannot be booked' : 'Book this time'}
+                      >
+                        <span>{slot.label}</span>
+                        <small>{ownSlot ? 'Current' : slot.status === 'available' ? 'Open' : slot.status === 'booked' ? 'Booked' : 'Past'}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedSlot && (
+                <div className="student-slot-selection">
+                  Selected slot: <strong>{selectedSlot.label}</strong> on {formatShortDate(bookingForm.dateTime)}
+                </div>
+              )}
             </div>
             <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreateBooking} disabled={bookingSaving}>
-                {bookingSaving ? 'Booking...' : 'Confirm Booking'}
+              <button className="btn btn-secondary" onClick={closeBookingModal}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreateBooking} disabled={bookingSaving || !bookingForm.dateTime}>
+                {bookingSaving ? (reschedulingBooking ? 'Rescheduling...' : 'Booking...') : (reschedulingBooking ? 'Confirm Reschedule' : 'Confirm Booking')}
               </button>
             </div>
           </div>

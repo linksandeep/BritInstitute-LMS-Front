@@ -108,7 +108,10 @@ export const batchApi = {
 export const sessionApi = {
   getAll: () => api.get('/sessions/me'),
   getMentors: () => api.get('/sessions/mentors'),
+  getAvailability: (mentorId: string, date: string) =>
+    api.get(`/sessions/mentors/${mentorId}/availability`, { params: { date } }),
   create: (data: object) => api.post('/sessions', data),
+  reschedule: (id: string, data: object) => api.patch(`/sessions/${id}/reschedule`, data),
   cancel: (id: string) => api.patch(`/sessions/${id}/cancel`),
   // Admin methods
   adminGetAll: () => api.get('/sessions/admin'),

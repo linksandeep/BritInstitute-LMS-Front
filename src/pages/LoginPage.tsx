@@ -45,13 +45,13 @@ export default function LoginPage() {
           <div className="login-hero-copy">
             <p className="login-kicker">Smart LMS for career growth</p>
             <h1>Learn, practise, and get ready for your next job.</h1>
-            <p>Track classes, assignments, mock interviews, resume work, and placement progress from one friendly student portal.</p>
+            <p>Track classes, live projects, mock interviews, resume and LinkedIn optimization, and placement progress from one friendly student portal.</p>
           </div>
 
           <div className="login-feature-strip" aria-label="Student success tools">
             <span>Live classes</span>
-            <span>Assignments</span>
-            <span>Resume work</span>
+            <span>LIVE projects</span>
+            <span>Resume and LinkedIn optimization</span>
             <span>Placement progress</span>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function LoginPage() {
             <div>
               <p className="login-card-eyebrow">Secure access</p>
               <h2>Enter your career dashboard</h2>
-              <p>Continue to classes, assignments, placement tools, and student progress.</p>
+              <p>Continue to classes, live projects, placement tools, and student progress.</p>
             </div>
           </div>
 

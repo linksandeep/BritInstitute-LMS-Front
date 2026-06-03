@@ -7,11 +7,18 @@ interface Booking {
   mentor: { name: string; username: string };
   topic: string;
   dateTime: string;
+  duration?: number;
   status: 'pending' | 'accepted' | 'completed' | 'cancelled';
   meetingLink?: string;
   zoomStartUrl?: string;
   createdAt: string;
 }
+
+const toDateTimeInputValue = (value: string) => {
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+  return local.toISOString().slice(0, 16);
+};
 
 export default function AdminAppointments() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -19,12 +26,18 @@ export default function AdminAppointments() {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [meetLinkInput, setMeetLinkInput] = useState<{ [key: string]: string }>({});
+  const [scheduleInput, setScheduleInput] = useState<{ [key: string]: string }>({});
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
       const res = await sessionApi.adminGetAll();
       setBookings(res.data.bookings);
+      const nextScheduleInput: { [key: string]: string } = {};
+      res.data.bookings.forEach((booking: Booking) => {
+        nextScheduleInput[booking._id] = toDateTimeInputValue(booking.dateTime);
+      });
+      setScheduleInput(nextScheduleInput);
     } catch (err) {
       setError('Failed to load appointments');
     } finally {
@@ -54,6 +67,24 @@ export default function AdminAppointments() {
     } catch (err) {
       const apiError = err as { response?: { data?: { message?: string } } };
       alert(apiError.response?.data?.message || 'Failed to update booking status');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleReschedule = async (id: string) => {
+    if (!scheduleInput[id]) {
+      alert('Please select a new date and time first.');
+      return;
+    }
+
+    setUpdating(id);
+    try {
+      await sessionApi.adminUpdate(id, { dateTime: new Date(scheduleInput[id]).toISOString() });
+      await fetchBookings();
+    } catch (err) {
+      const apiError = err as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || 'Failed to reschedule booking');
     } finally {
       setUpdating(null);
     }
@@ -120,7 +151,7 @@ export default function AdminAppointments() {
                   <td>
                     <div style={{ fontSize: '13px' }}>{new Date(b.dateTime).toLocaleString()}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Requested: {new Date(b.createdAt).toLocaleDateString()}
+                      {b.duration || 30} min • Requested: {new Date(b.createdAt).toLocaleDateString()}
                     </div>
                   </td>
                   <td>
@@ -132,6 +163,22 @@ export default function AdminAppointments() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {b.status === 'pending' && (
                         <>
+                          <div className="actions-row" style={{ alignItems: 'stretch' }}>
+                            <input
+                              type="datetime-local"
+                              className="form-input"
+                              style={{ padding: '6px 10px', fontSize: '12px' }}
+                              value={scheduleInput[b._id] || ''}
+                              onChange={e => setScheduleInput(p => ({ ...p, [b._id]: e.target.value }))}
+                            />
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleReschedule(b._id)}
+                              disabled={updating === b._id}
+                            >
+                              Reschedule
+                            </button>
+                          </div>
                           <input
                             className="form-input"
                             style={{ padding: '6px 10px', fontSize: '12px' }}
@@ -159,6 +206,22 @@ export default function AdminAppointments() {
                       )}
                       {b.status === 'accepted' && (
                         <>
+                          <div className="actions-row" style={{ alignItems: 'stretch' }}>
+                            <input
+                              type="datetime-local"
+                              className="form-input"
+                              style={{ padding: '6px 10px', fontSize: '12px' }}
+                              value={scheduleInput[b._id] || ''}
+                              onChange={e => setScheduleInput(p => ({ ...p, [b._id]: e.target.value }))}
+                            />
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleReschedule(b._id)}
+                              disabled={updating === b._id}
+                            >
+                              Reschedule
+                            </button>
+                          </div>
                           {b.meetingLink ? (
                             <>
                               <a href={b.meetingLink} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none' }}>
