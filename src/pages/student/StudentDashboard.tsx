@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, studentPortalApi } from '../../api';
 import BrandLogo from '../../components/BrandLogo';
 import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
+import ChangePasswordForm from '../../components/ChangePasswordForm';
 
 type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
@@ -1146,7 +1147,8 @@ export default function StudentDashboard() {
           <input className="form-input" value={courseTitle} disabled />
         </div>
       </div>
-      <div className="alert alert-info">Profile editing is managed by your teacher or super admin.</div>
+      <div className="alert alert-info">Name, username, and programme are managed by your teacher or super admin.</div>
+      <ChangePasswordForm />
     </section>
   );
 

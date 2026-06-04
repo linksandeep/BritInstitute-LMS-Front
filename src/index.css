@@ -244,6 +244,44 @@ body {
   min-height: 80px;
 }
 
+.change-password-form {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid rgba(16, 35, 62, 0.08);
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.change-password-form h2 {
+  color: #10233e;
+  font-size: 22px;
+  margin: 6px 0 8px;
+}
+
+.change-password-form p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+.change-password-form .alert {
+  margin-bottom: 16px;
+}
+
+.change-password-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.change-password-actions small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* ─── Login page ─────────────────────────────────────────────────────────── */
 .login-shell {
   min-height: 100vh;

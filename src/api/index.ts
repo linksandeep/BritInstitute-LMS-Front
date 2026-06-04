@@ -21,6 +21,8 @@ export const authApi = {
   getMe: () => api.get('/auth/me'),
   getSessionConfig: () => api.get('/auth/session-config'),
   heartbeat: () => api.post('/auth/heartbeat'),
+  changePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
+    api.put('/auth/password', data),
   logout: (reason: 'manual' | 'inactivity' = 'manual') => api.post('/auth/logout', { reason }),
 };
 

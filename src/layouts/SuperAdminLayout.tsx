@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BrandLogo from '../components/BrandLogo';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 
 const navItems = [
   { label: 'Dashboard', path: '/superadmin' },
@@ -11,6 +12,7 @@ const navItems = [
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -78,6 +80,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <div style={{ fontSize: '14px', fontWeight: '700' }}>{user?.name}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Super Admin</div>
           </div>
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="btn btn-secondary btn-sm"
+            style={{ width: '100%', justifyContent: 'center', marginBottom: '8px' }}
+          >
+            Profile & Password
+          </button>
           <button onClick={handleLogout} className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }}>
             Sign Out
           </button>
@@ -87,6 +96,23 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <main style={{ flex: 1, padding: '36px', minWidth: 0, overflowY: 'auto' }}>
         <div className="slide-in">{children}</div>
       </main>
+
+      {showProfileModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowProfileModal(false); }}>
+          <div className="modal" style={{ maxWidth: '620px' }}>
+            <div className="modal-header">
+              <div>
+                <h2>Profile settings</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
+                  Signed in as {user?.name} ({user?.username})
+                </p>
+              </div>
+              <button className="modal-close" onClick={() => setShowProfileModal(false)}>X</button>
+            </div>
+            <ChangePasswordForm />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

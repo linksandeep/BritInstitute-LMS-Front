@@ -185,6 +185,10 @@ The frontend consumes backend route groups under:
 - `/api/sessions`
 - `/api/student-portal`
 
+Important auth endpoints used by the profile settings UI:
+
+- `PUT /api/auth/password`
+
 Important booking endpoints used by the student mentoring UI:
 
 - `GET /api/sessions/mentors`
