@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { batchApi, recordedApi } from '../../api';
 import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
+import { formatUkDate } from '../../utils/ukTime';
 
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface Lecture {
@@ -143,7 +144,7 @@ export default function AdminRecorded() {
                         Play in LMS
                       </button>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{new Date(l.createdAt).toLocaleDateString()}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{formatUkDate(l.createdAt)}</td>
                     <td>
                       <div className="actions-row">
                         <button className="btn btn-secondary btn-sm" onClick={() => openEdit(l)}>✏️</button>

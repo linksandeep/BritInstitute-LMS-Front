@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../../api';
+import { formatUkDateTime } from '../../utils/ukTime';
 
 interface ActivityUser {
   id: string;
@@ -47,7 +48,7 @@ const formatDuration = (seconds = 0) => {
 
 const formatDate = (value?: string) => {
   if (!value) return 'Not recorded';
-  return new Date(value).toLocaleString();
+  return formatUkDateTime(value);
 };
 
 export default function AdminActivity() {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi, curriculumApi } from '../../api';
+import { parseUkDateTimeInput, toUkDateTimeInputValue } from '../../utils/ukTime';
 
 interface Teacher {
   _id: string;
@@ -36,12 +37,8 @@ interface Props {
   onClose: () => void;
 }
 
-const toInput = (value?: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-};
+const toInput = (value?: string) => value ? toUkDateTimeInputValue(value) : '';
+const currentUkDateTimeInput = () => toUkDateTimeInputValue(new Date());
 
 const getInstructorId = (instructor?: string | Teacher) => {
   if (!instructor) return '';
@@ -116,7 +113,7 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
           ...prev.modules,
           {
             title: `Module ${prev.modules.length + 1}: Batch Adjustment`,
-            topics: [{ title: 'New batch class', duration: 120 }],
+            topics: [{ title: 'New batch class', duration: 120, scheduledAt: parseUkDateTimeInput(currentUkDateTimeInput()).toISOString() }],
           },
         ],
       };
@@ -140,7 +137,11 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
               ...module,
               topics: [
                 ...module.topics,
-                { title: `Class ${module.topics.length + 1}: Batch extra session`, duration: 120 },
+                {
+                  title: `Class ${module.topics.length + 1}: Batch extra session`,
+                  duration: 120,
+                  scheduledAt: parseUkDateTimeInput(currentUkDateTimeInput()).toISOString(),
+                },
               ],
             }
           : module),
@@ -355,11 +356,21 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
                                 className="form-input"
                                 style={{ padding: '6px 10px', fontSize: '13px' }}
                                 value={toInput(topic.scheduledAt)}
+                                onFocus={() => {
+                                  if (!topic.scheduledAt) {
+                                    handleTopicChange(
+                                      moduleIndex,
+                                      topicIndex,
+                                      'scheduledAt',
+                                      parseUkDateTimeInput(currentUkDateTimeInput()).toISOString()
+                                    );
+                                  }
+                                }}
                                 onChange={(e) => handleTopicChange(
                                   moduleIndex,
                                   topicIndex,
                                   'scheduledAt',
-                                  e.target.value ? new Date(e.target.value).toISOString() : ''
+                                  e.target.value ? parseUkDateTimeInput(e.target.value).toISOString() : ''
                                 )}
                               />
                             </div>

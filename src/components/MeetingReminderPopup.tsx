@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { liveClassApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { formatUkDateTime, formatUkTime } from '../utils/ukTime';
 
 interface Batch {
   _id: string;
@@ -120,11 +121,11 @@ export default function MeetingReminderPopup() {
         <div className="meeting-reminder-time">
           <div>
             <span>Starts</span>
-            <strong>{startsAt.toLocaleString()}</strong>
+            <strong>{formatUkDateTime(startsAt)}</strong>
           </div>
           <div>
             <span>Ends</span>
-            <strong>{reminderClass.status === 'ended' ? 'Closed' : endsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            <strong>{reminderClass.status === 'ended' ? 'Closed' : formatUkTime(endsAt)}</strong>
           </div>
         </div>
         <button className="btn btn-zoom meeting-reminder-action" onClick={openMeeting}>

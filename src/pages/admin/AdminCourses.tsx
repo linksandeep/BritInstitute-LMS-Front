@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { formatUkDate } from '../../utils/ukTime';
 
 interface Teacher { _id: string; id?: string; name: string; username: string; }
 interface Course {
@@ -154,7 +155,7 @@ export default function AdminCourses() {
                 {c.createdBy?.name && <span className="badge badge-other">Owner: {c.createdBy.name}</span>}
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px' }}>
-                Created {new Date(c.createdAt).toLocaleDateString()}
+                Created {formatUkDate(c.createdAt)}
               </p>
             </div>
           ))}

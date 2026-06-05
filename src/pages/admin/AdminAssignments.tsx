@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { assignmentApi, batchApi } from '../../api';
+import { formatUkDate, formatUkDateTime, parseUkDateInput, toUkDateInputValue } from '../../utils/ukTime';
 
 interface Batch {
   _id: string;
@@ -82,7 +83,7 @@ export default function AdminAssignments() {
       batch: assignment.batch?._id || '',
       title: assignment.title,
       description: assignment.description,
-      dueDate: new Date(assignment.dueDate).toISOString().slice(0, 10),
+      dueDate: toUkDateInputValue(assignment.dueDate),
       attachmentUrl: assignment.attachmentUrl || '',
     });
     setError('');
@@ -98,7 +99,7 @@ export default function AdminAssignments() {
 
     setSaving(true);
     try {
-      const payload = { ...form, dueDate: new Date(form.dueDate).toISOString() };
+      const payload = { ...form, dueDate: parseUkDateInput(form.dueDate).toISOString() };
       if (editAssignment) await assignmentApi.update(editAssignment._id, payload);
       else await assignmentApi.create(payload);
       await fetchAll(selectedBatch);
@@ -205,7 +206,7 @@ export default function AdminAssignments() {
                             {assignment.description.slice(0, 90)}{assignment.description.length > 90 ? '…' : ''}
                           </p>
                         </td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{new Date(assignment.dueDate).toLocaleDateString()}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatUkDate(assignment.dueDate)}</td>
                         <td>
                           {isOverdue(assignment.dueDate)
                             ? <span className="badge badge-overdue">⏰ Overdue</span>
@@ -327,7 +328,7 @@ export default function AdminAssignments() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span className={`badge ${submission.status === 'late' ? 'badge-overdue' : 'badge-present'}`}>{submission.status === 'late' ? 'Late' : 'Submitted'}</span>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{new Date(submission.submittedAt).toLocaleString()}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{formatUkDateTime(submission.submittedAt)}</div>
                         {submission.batch?.name && <div style={{ fontSize: '12px', color: 'var(--accent)', marginTop: '6px' }}>{submission.batch.name}</div>}
                       </div>
                     </div>

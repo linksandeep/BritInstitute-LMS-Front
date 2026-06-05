@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { batchApi, adminApi } from '../../api';
 import AdminCurriculumModal from './AdminCurriculumModal';
+import { formatUkDate, parseUkDateInput, toUkDateInputValue } from '../../utils/ukTime';
 
 interface Course  { _id: string; title: string; description: string }
 interface Student { _id: string; name: string; username: string; isActive: boolean }
@@ -25,8 +26,8 @@ interface StudentReport {
 
 type ModalMode = 'create' | 'edit' | 'students' | 'details' | 'curriculum' | null;
 
-const fmt = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-const toInput = (d?: string) => d ? new Date(d).toISOString().slice(0, 10) : '';
+const fmt = (d: string) => formatUkDate(d, { day: '2-digit', month: 'short', year: 'numeric' });
+const toInput = (d?: string) => d ? toUkDateInputValue(d) : '';
 
 export default function AdminBatches() {
   const [batches,  setBatches]  = useState<Batch[]>([]);
@@ -128,10 +129,15 @@ export default function AdminBatches() {
     }
     setSaving(true); setError('');
     try {
+      const payload = {
+        ...form,
+        startDate: parseUkDateInput(form.startDate).toISOString(),
+        endDate: form.endDate ? parseUkDateInput(form.endDate).toISOString() : '',
+      };
       if (modal === 'edit' && selected) {
-        await batchApi.update(selected._id, form);
+        await batchApi.update(selected._id, payload);
       } else {
-        await batchApi.create(form);
+        await batchApi.create(payload);
       }
       await fetchAll();
       closeModal();

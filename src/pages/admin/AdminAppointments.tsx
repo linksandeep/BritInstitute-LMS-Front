@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { sessionApi } from '../../api';
+import { formatUkDate, formatUkDateTime, parseUkDateTimeInput, toUkDateTimeInputValue } from '../../utils/ukTime';
 
 interface Booking {
   _id: string;
@@ -13,12 +14,6 @@ interface Booking {
   zoomStartUrl?: string;
   createdAt: string;
 }
-
-const toDateTimeInputValue = (value: string) => {
-  const date = new Date(value);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
-  return local.toISOString().slice(0, 16);
-};
 
 export default function AdminAppointments() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -35,7 +30,7 @@ export default function AdminAppointments() {
       setBookings(res.data.bookings);
       const nextScheduleInput: { [key: string]: string } = {};
       res.data.bookings.forEach((booking: Booking) => {
-        nextScheduleInput[booking._id] = toDateTimeInputValue(booking.dateTime);
+        nextScheduleInput[booking._id] = toUkDateTimeInputValue(booking.dateTime);
       });
       setScheduleInput(nextScheduleInput);
     } catch (err) {
@@ -80,7 +75,7 @@ export default function AdminAppointments() {
 
     setUpdating(id);
     try {
-      await sessionApi.adminUpdate(id, { dateTime: new Date(scheduleInput[id]).toISOString() });
+      await sessionApi.adminUpdate(id, { dateTime: parseUkDateTimeInput(scheduleInput[id]).toISOString() });
       await fetchBookings();
     } catch (err) {
       const apiError = err as { response?: { data?: { message?: string } } };
@@ -149,9 +144,9 @@ export default function AdminAppointments() {
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ID: {b._id.slice(-6)}</div>
                   </td>
                   <td>
-                    <div style={{ fontSize: '13px' }}>{new Date(b.dateTime).toLocaleString()}</div>
+                    <div style={{ fontSize: '13px' }}>{formatUkDateTime(b.dateTime)}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {b.duration || 30} min • Requested: {new Date(b.createdAt).toLocaleDateString()}
+                      {b.duration || 30} min • Requested: {formatUkDate(b.createdAt)}
                     </div>
                   </td>
                   <td>

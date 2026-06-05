@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { batchApi, liveClassApi } from '../../api';
+import { formatUkDateTime, parseUkDateTimeInput, toUkDateTimeInputValue } from '../../utils/ukTime';
 
 interface Batch { _id: string; name: string; course?: { title: string } }
 interface LiveClass {
@@ -27,6 +28,8 @@ const canStartClass = (cls: LiveClass, now: Date) => {
   const readyAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
   return readyAt <= now;
 };
+
+const currentUkDateTimeInput = () => toUkDateTimeInputValue(new Date());
 
 export default function AdminLiveClasses() {
   const [classes, setClasses] = useState<LiveClass[]>([]);
@@ -58,14 +61,13 @@ export default function AdminLiveClasses() {
 
   const openCreate = () => {
     setEditClass(null);
-    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', scheduledAt: '', duration: '60' });
+    setForm({ batch: batches[0]?._id || '', classNumber: '', topic: '', scheduledAt: currentUkDateTimeInput(), duration: '60' });
     setError(''); setShowModal(true);
   };
 
   const openEdit = (c: LiveClass) => {
     setEditClass(c);
-    const localDT = new Date(c.scheduledAt).toISOString().slice(0, 16);
-    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, scheduledAt: localDT, duration: String(c.duration) });
+    setForm({ batch: c.batch?._id || '', classNumber: c.classNumber, topic: c.topic, scheduledAt: toUkDateTimeInputValue(c.scheduledAt), duration: String(c.duration) });
     setError(''); setShowModal(true);
   };
 
@@ -77,7 +79,7 @@ export default function AdminLiveClasses() {
     if (!batch || !classNumber || !topic || !scheduledAt) { setError('All fields are required'); return; }
     setSaving(true);
     try {
-      const payload = { batch, classNumber, topic, scheduledAt: new Date(scheduledAt).toISOString(), duration: Number(duration) };
+      const payload = { batch, classNumber, topic, scheduledAt: parseUkDateTimeInput(scheduledAt).toISOString(), duration: Number(duration) };
       if (editClass) await liveClassApi.update(editClass._id, payload);
       else await liveClassApi.create(payload);
       await fetchAll();
@@ -182,7 +184,7 @@ export default function AdminLiveClasses() {
                   <td>{cls.topic}</td>
                   <td><span className="badge badge-scheduled" style={{background: 'var(--accent-light)', color: 'var(--accent)'}}>{cls.batch?.name}</span></td>
                   <td style={{ color: 'var(--text-muted)' }}>{cls.batch?.course?.title || '—'}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatUkDateTime(cls.scheduledAt)}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{cls.duration}m</td>
                   <td><span className={`badge ${statusColor[displayStatus] || 'badge-ended'}`}>{displayStatus === 'live' ? 'going on' : displayStatus}</span></td>
                   <td>
@@ -250,7 +252,13 @@ export default function AdminLiveClasses() {
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Date & Time</label>
-                <input className="form-input" type="datetime-local" value={form.scheduledAt} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} />
+                <input
+                  className="form-input"
+                  type="datetime-local"
+                  value={form.scheduledAt}
+                  onFocus={() => setForm(f => f.scheduledAt ? f : ({ ...f, scheduledAt: currentUkDateTimeInput() }))}
+                  onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Duration (minutes)</label>

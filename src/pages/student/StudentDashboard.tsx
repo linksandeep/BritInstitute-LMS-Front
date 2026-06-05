@@ -5,6 +5,7 @@ import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, st
 import BrandLogo from '../../components/BrandLogo';
 import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
 import ChangePasswordForm from '../../components/ChangePasswordForm';
+import { formatUkDate, formatUkDateTime, formatUkTime, toUkDateInputValue } from '../../utils/ukTime';
 
 type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
@@ -118,7 +119,7 @@ const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: stri
 };
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString([], {
+  formatUkDateTime(value, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -126,20 +127,15 @@ const formatDateTime = (value: string) =>
   });
 
 const formatShortDate = (value: string) =>
-  new Date(value).toLocaleDateString([], {
+  formatUkDate(value, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
 
-const toDateInputValue = (value?: string | Date) => {
-  const date = value ? new Date(value) : new Date();
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
-  return local.toISOString().slice(0, 10);
-};
+const toDateInputValue = (value?: string | Date) => toUkDateInputValue(value);
 
-const formatTime = (date: Date) =>
-  date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatTime = (date: Date) => formatUkTime(date);
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -520,8 +516,8 @@ export default function StudentDashboard() {
     return (
       <article key={cls._id} className={`student-schedule-row ${state}`}>
         <div className="student-schedule-date">
-          <span>{new Date(cls.scheduledAt).toLocaleDateString([], { month: 'short' })}</span>
-          <strong>{new Date(cls.scheduledAt).toLocaleDateString([], { day: '2-digit' })}</strong>
+          <span>{formatUkDate(cls.scheduledAt, { month: 'short' })}</span>
+          <strong>{formatUkDate(cls.scheduledAt, { day: '2-digit' })}</strong>
         </div>
         <div className="student-schedule-body">
           <div className="student-row-meta">
@@ -731,7 +727,7 @@ export default function StudentDashboard() {
               <p>{assignment.description}</p>
               {assignment.submission && (
                 <div className="student-submission-note">
-                  <strong>Last submitted:</strong> {new Date(assignment.submission.submittedAt).toLocaleString()}
+                  <strong>Last submitted:</strong> {formatUkDateTime(assignment.submission.submittedAt)}
                   {assignment.submission.notes && <span>{assignment.submission.notes}</span>}
                 </div>
               )}

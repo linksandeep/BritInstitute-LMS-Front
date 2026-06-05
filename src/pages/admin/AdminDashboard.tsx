@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { adminApi, liveClassApi } from '../../api';
+import { formatUkDate, formatUkDateTime } from '../../utils/ukTime';
 
 interface Stats { totalStudents: number; totalCourses: number; totalBatches: number; }
 interface LiveClassSummary {
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
               Today
             </div>
             <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-              {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+              {formatUkDate(new Date(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
               {workspaceHelp}
@@ -181,7 +182,7 @@ export default function AdminDashboard() {
                       <td><strong>{cls.classNumber}</strong></td>
                       <td>{cls.topic}</td>
                       <td style={{ color: 'var(--text-muted)' }}>{cls.course?.title || '—'}</td>
-                      <td style={{ color: 'var(--text-muted)' }}>{new Date(cls.scheduledAt).toLocaleString()}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{formatUkDateTime(cls.scheduledAt)}</td>
                       <td><span className={`badge badge-${displayStatus}`}>{displayStatus === 'live' ? 'going on' : displayStatus}</span></td>
                     </tr>
                   );
