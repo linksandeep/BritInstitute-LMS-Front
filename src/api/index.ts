@@ -71,6 +71,7 @@ export const recordedApi = {
   getAll: () => api.get('/recorded'),
   getByBatch: (batchId: string) => api.get(`/recorded/batch/${batchId}`),
   getMine: () => api.get('/recorded/me'),
+  getStreamToken: (id: string) => api.post(`/recorded/${id}/stream-token`),
   create: (data: object) => api.post('/recorded', data),
   update: (id: string, data: object) => api.put(`/recorded/${id}`, data),
   delete: (id: string) => api.delete(`/recorded/${id}`),
