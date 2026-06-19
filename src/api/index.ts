@@ -76,7 +76,7 @@ export const recordedApi = {
   update: (id: string, data: object) => api.put(`/recorded/${id}`, data),
   delete: (id: string) => api.delete(`/recorded/${id}`),
   syncZoom: () => api.post('/recorded/sync-zoom'),
-  updateProgress: (id: string, data: { watchDuration: number, isCompleted: boolean }) =>
+  updateProgress: (id: string, data: { watchDuration: number, isCompleted: boolean, playbackPosition?: number }) =>
     api.post(`/recorded/${id}/progress`, data),
 };
 

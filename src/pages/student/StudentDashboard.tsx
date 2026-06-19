@@ -20,7 +20,7 @@ interface Lecture {
   _id: string; title: string; description: string; videoUrl: string; videoType: string; order: number;
   recordingSource?: string; recordingStatus?: string;
   isPlayable?: boolean;
-  isCompleted?: boolean; watchDuration?: number;
+  isCompleted?: boolean; watchDuration?: number; lastPosition?: number;
 }
 
 interface Assignment {
@@ -663,12 +663,12 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 <button className="btn btn-secondary btn-sm" onClick={() => setExpandedLecture(isExpanded ? null : lecture._id)}>
-                  {isExpanded ? 'Collapse' : 'Watch'}
+                  {isExpanded ? 'Collapse' : (lecture.lastPosition || 0) >= 2 ? 'Resume' : 'Watch'}
                 </button>
               </div>
               {isExpanded && (
                 <div className="student-player-wrap">
-                  <RecordedLecturePlayer lecture={lecture} />
+                  <RecordedLecturePlayer lecture={lecture} initialPosition={lecture.lastPosition || 0} />
                 </div>
               )}
             </article>
