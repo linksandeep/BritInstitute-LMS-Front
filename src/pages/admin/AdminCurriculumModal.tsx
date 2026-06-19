@@ -53,6 +53,7 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [creatingMeeting, setCreatingMeeting] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -199,6 +200,35 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
       setError(err.response?.data?.message || 'Failed to save curriculum');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateMeeting = async (moduleIndex: number, topicIndex: number) => {
+    if (!curriculum) return;
+    const topic = curriculum.modules[moduleIndex]?.topics[topicIndex];
+    if (!topic?.scheduledAt) return;
+
+    const meetingKey = `${moduleIndex}-${topicIndex}`;
+    try {
+      setCreatingMeeting(meetingKey);
+      setError('');
+      const res = await curriculumApi.updateByBatch(batchId, {
+        title: curriculum.title,
+        modules: curriculum.modules.map((module) => ({
+          ...module,
+          topics: module.topics.map((item) => ({
+            ...item,
+            scheduledAt: item.scheduledAt || undefined,
+            meetingLink: item.meetingLink || '',
+            instructor: getInstructorId(item.instructor) || undefined,
+          })),
+        })),
+      });
+      setCurriculum(res.data.curriculum);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create Zoom meeting link');
+    } finally {
+      setCreatingMeeting('');
     }
   };
 
@@ -393,12 +423,30 @@ export default function AdminCurriculumModal({ batchId, batchName, onClose }: Pr
                               <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
                                 Meeting Status
                               </label>
-                              <div
-                                className={`badge ${topic.meetingLink ? 'badge-zoom' : topic.scheduledAt ? 'badge-scheduled' : 'badge-ended'}`}
-                                style={{ height: '36px', justifyContent: 'center', width: '100%' }}
-                              >
-                                {topic.meetingLink ? 'Link ready' : topic.scheduledAt ? 'Auto Zoom on save' : 'Not scheduled'}
-                              </div>
+                              {topic.meetingLink ? (
+                                <div
+                                  className="badge badge-zoom"
+                                  style={{ height: '36px', justifyContent: 'center', width: '100%' }}
+                                >
+                                  Link ready
+                                </div>
+                              ) : topic.scheduledAt ? (
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{ height: '36px', justifyContent: 'center', width: '100%' }}
+                                  onClick={() => handleCreateMeeting(moduleIndex, topicIndex)}
+                                  disabled={creatingMeeting === `${moduleIndex}-${topicIndex}` || saving || assigning}
+                                >
+                                  {creatingMeeting === `${moduleIndex}-${topicIndex}` ? 'Creating...' : 'Create'}
+                                </button>
+                              ) : (
+                                <div
+                                  className="badge badge-ended"
+                                  style={{ height: '36px', justifyContent: 'center', width: '100%' }}
+                                >
+                                  Not scheduled
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
