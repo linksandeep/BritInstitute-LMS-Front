@@ -11,6 +11,7 @@ interface RecordedLectureLike {
   recordingStatus?: string;
   isPlayable?: boolean;
   playbackMode?: 'protected_stream' | 'blocked_external';
+  liveClass?: unknown;
 }
 
 interface RecordedLecturePlayerProps {
@@ -80,7 +81,7 @@ export default function RecordedLecturePlayer({ lecture, initialPosition = 0 }: 
   const [streamError, setStreamError] = useState('');
   const [resumePosition, setResumePosition] = useState(Math.max(0, initialPosition));
   const [showResume, setShowResume] = useState(initialPosition >= 2);
-  const isZoomRecording = lecture.recordingSource === 'zoom';
+  const isZoomRecording = lecture.recordingSource === 'zoom' || Boolean(lecture._id && lecture.videoType === 'zoom' && lecture.liveClass);
   const usesProtectedStream = Boolean(lecture._id && (lecture.playbackMode === 'protected_stream' || isZoomRecording));
   const videoUrl = usesProtectedStream && lecture._id && streamToken
     ? getProtectedStreamUrl(lecture._id, streamToken)
