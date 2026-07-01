@@ -80,6 +80,13 @@ export const recordedApi = {
     api.post(`/recorded/${id}/progress`, data),
 };
 
+export const foundationApi = {
+  getAll: () => api.get('/foundation'),
+  create: (data: object) => api.post('/foundation', data),
+  update: (id: string, data: object) => api.put(`/foundation/${id}`, data),
+  delete: (id: string) => api.delete(`/foundation/${id}`),
+};
+
 // Assignments
 export const assignmentApi = {
   getAll: (batch?: string) => api.get('/assignments', { params: batch ? { batch } : undefined }),

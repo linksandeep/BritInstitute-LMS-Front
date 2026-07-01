@@ -25,11 +25,15 @@ export default function AdminRecorded() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editLecture, setEditLecture] = useState<Lecture | null>(null);
+  const [linkLecture, setLinkLecture] = useState<Lecture | null>(null);
   const [playerLecture, setPlayerLecture] = useState<Lecture | null>(null);
   const [form, setForm] = useState({ batch: '', title: '', description: '', videoUrl: '', videoType: 'youtube', order: '0' });
+  const [linkForm, setLinkForm] = useState({ videoUrl: '', videoType: 'youtube' });
   const [error, setError] = useState('');
+  const [linkError, setLinkError] = useState('');
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savingLink, setSavingLink] = useState(false);
   const [syncingZoom, setSyncingZoom] = useState(false);
 
   const fetchAll = async () => {
@@ -54,6 +58,13 @@ export default function AdminRecorded() {
     setError(''); setShowModal(true);
   };
 
+  const openLinkUpdate = (l: Lecture) => {
+    setLinkLecture(l);
+    setLinkForm({ videoUrl: l.videoUrl || '', videoType: l.videoType || 'other' });
+    setLinkError('');
+    setNotice('');
+  };
+
   const handleSave = async () => {
     setError('');
     if (!form.batch || !form.title || !form.videoUrl) { setError('Batch, title and video URL are required'); return; }
@@ -68,6 +79,32 @@ export default function AdminRecorded() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || 'An error occurred');
     } finally { setSaving(false); }
+  };
+
+  const handleSaveLink = async () => {
+    if (!linkLecture) return;
+    setLinkError('');
+    if (!linkForm.videoUrl.trim()) {
+      setLinkError('Recorded lecture link is required');
+      return;
+    }
+
+    setSavingLink(true);
+    try {
+      await recordedApi.update(linkLecture._id, {
+        videoUrl: linkForm.videoUrl.trim(),
+        videoType: linkForm.videoType,
+        replaceRecording: true,
+      });
+      await fetchAll();
+      setLinkLecture(null);
+      setNotice('Recorded lecture link updated.');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setLinkError(msg || 'Unable to update recorded lecture link');
+    } finally {
+      setSavingLink(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -147,6 +184,7 @@ export default function AdminRecorded() {
                     <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{formatUkDate(l.createdAt)}</td>
                     <td>
                       <div className="actions-row">
+                        <button className="btn btn-secondary btn-sm" onClick={() => openLinkUpdate(l)}>Update Link</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => openEdit(l)}>✏️</button>
                         <button className="btn btn-danger btn-sm" onClick={() => handleDelete(l._id)}>🗑️</button>
                       </div>
@@ -156,6 +194,42 @@ export default function AdminRecorded() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {linkLecture && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setLinkLecture(null); }}>
+          <div className="modal" style={{ maxWidth: '620px' }}>
+            <div className="modal-header">
+              <h2>Update Recorded Link</h2>
+              <button className="modal-close" onClick={() => setLinkLecture(null)}>✕</button>
+            </div>
+            {linkError && <div className="alert alert-error">⚠️ {linkError}</div>}
+            <div className="form-group">
+              <label className="form-label">Lecture</label>
+              <input className="form-input" value={linkLecture.title} disabled />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Video Type</label>
+              <select className="form-select" value={linkForm.videoType} onChange={e => setLinkForm(f => ({ ...f, videoType: e.target.value }))}>
+                <option value="youtube">▶️ YouTube</option>
+                <option value="drive">📁 Google Drive</option>
+                <option value="google_meet">🎥 Meet Recording</option>
+                <option value="zoom">🎥 Zoom Link</option>
+                <option value="other">🔗 Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Recorded Lecture Link</label>
+              <input className="form-input" placeholder="Paste the correct recording link" value={linkForm.videoUrl} onChange={e => setLinkForm(f => ({ ...f, videoUrl: e.target.value }))} />
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setLinkLecture(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSaveLink} disabled={savingLink}>
+                {savingLink ? 'Updating...' : 'Update Link'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -181,6 +255,7 @@ export default function AdminRecorded() {
                   <option value="youtube">▶️ YouTube</option>
                   <option value="drive">📁 Google Drive</option>
                   <option value="google_meet">🎥 Meet Recording</option>
+                  <option value="zoom">🎥 Zoom Link</option>
                   <option value="other">🔗 Other</option>
                 </select>
               </div>

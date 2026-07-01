@@ -22,6 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: '📚', label: 'Courses', path: `${basePath}/courses` },
     { icon: '🎥', label: 'Live Classes', path: `${basePath}/live-classes` },
     { icon: '🎬', label: 'Recorded', path: `${basePath}/recorded` },
+    { icon: '🏗️', label: 'Foundation', path: `${basePath}/foundation` },
     { icon: '📝', label: 'Assignments', path: `${basePath}/assignments` },
     { icon: '🗓️', label: 'Appointments', path: `${basePath}/appointments` },
   ];

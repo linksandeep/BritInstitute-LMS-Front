@@ -80,7 +80,7 @@ export default function RecordedLecturePlayer({ lecture, initialPosition = 0 }: 
   const [streamError, setStreamError] = useState('');
   const [resumePosition, setResumePosition] = useState(Math.max(0, initialPosition));
   const [showResume, setShowResume] = useState(initialPosition >= 2);
-  const isZoomRecording = lecture.recordingSource === 'zoom' || lecture.videoType === 'zoom';
+  const isZoomRecording = lecture.recordingSource === 'zoom';
   const usesProtectedStream = Boolean(lecture._id && (lecture.playbackMode === 'protected_stream' || isZoomRecording));
   const videoUrl = usesProtectedStream && lecture._id && streamToken
     ? getProtectedStreamUrl(lecture._id, streamToken)

@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, studentPortalApi } from '../../api';
+import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, studentPortalApi, foundationApi } from '../../api';
 import BrandLogo from '../../components/BrandLogo';
 import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
 import ChangePasswordForm from '../../components/ChangePasswordForm';
 import { formatUkDate, formatUkDateTime, formatUkTime, toUkDateInputValue } from '../../utils/ukTime';
 
-type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'settings';
+type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'foundation' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
 
 interface LiveClass {
@@ -21,6 +21,15 @@ interface Lecture {
   recordingSource?: string; recordingStatus?: string;
   isPlayable?: boolean;
   isCompleted?: boolean; watchDuration?: number; lastPosition?: number;
+}
+
+interface FoundationResource {
+  _id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  videoType: string;
+  order: number;
 }
 
 interface Assignment {
@@ -153,11 +162,13 @@ export default function StudentDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [portalSummary, setPortalSummary] = useState<StudentPortalSummary | null>(null);
+  const [foundationResources, setFoundationResources] = useState<FoundationResource[]>([]);
   const [portalError, setPortalError] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [attendingId, setAttendingId] = useState<string | null>(null);
   const [expandedLecture, setExpandedLecture] = useState<string | null>(null);
+  const [expandedFoundation, setExpandedFoundation] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState<Record<string, number>>({});
 
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -186,7 +197,7 @@ export default function StudentDashboard() {
     if (!courseId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [lc, lv, as, bs, ms, curr, summary] = await Promise.all([
+      const [lc, lv, as, bs, ms, curr, summary, foundation] = await Promise.all([
         liveClassApi.getMine(),
         recordedApi.getMine(),
         assignmentApi.getMine(),
@@ -194,6 +205,7 @@ export default function StudentDashboard() {
         sessionApi.getMentors(),
         curriculumApi.getMine().catch(() => ({ data: { curriculum: null } })),
         studentPortalApi.getSummary().catch(() => ({ data: { summary: null } })),
+        foundationApi.getAll().catch(() => ({ data: { resources: [] } })),
       ]);
       setLiveClasses(lc.data.liveClasses);
       setLectures(lv.data.lectures);
@@ -202,6 +214,7 @@ export default function StudentDashboard() {
       setMentors(ms.data.mentors);
       setCurriculum(curr.data.curriculum);
       setPortalSummary(summary.data.summary);
+      setFoundationResources(foundation.data.resources || []);
       setPortalError(summary.data.summary ? '' : 'Some student insight widgets could not load from the backend.');
 
       const wt: Record<string, number> = {};
@@ -430,6 +443,7 @@ export default function StudentDashboard() {
     { id: 'performance', code: 'AN', label: 'Analytics' },
     { id: 'certificates', code: 'CF', label: 'Certificates' },
     { id: 'assistant', code: 'AI', label: 'Study Assistant' },
+    { id: 'foundation', code: 'FB', label: 'Foundation & Build-Up' },
     { id: 'settings', code: 'ST', label: 'Settings' },
   ];
 
@@ -1125,6 +1139,60 @@ export default function StudentDashboard() {
     </>
   );
 
+  const renderFoundationBuildUp = () => (
+    <>
+      <section className="student-page-hero">
+        <span className="student-eyebrow">Foundation & Build-Up</span>
+        <h1>Extra learning library</h1>
+        <p>Build core concepts with shared recordings and resources from the institute team.</p>
+      </section>
+
+      <section className="student-section-panel">
+        <div className="student-section-head">
+          <div>
+            <span className="student-eyebrow">Shared resources</span>
+            <h2>Foundation videos</h2>
+          </div>
+          <span className="student-pill primary">{foundationResources.length} available</span>
+        </div>
+
+        {foundationResources.length === 0 ? (
+          <div className="student-empty-panel embedded">
+            <div className="student-empty-mark">FB</div>
+            <h3>No Foundation & Build-Up videos yet</h3>
+            <p>Shared foundation videos will appear here once your institute team uploads them.</p>
+          </div>
+        ) : foundationResources.map((resource, idx) => {
+          const typeInfo = VIDEO_TYPE_INFO[resource.videoType] || VIDEO_TYPE_INFO.other;
+          const isExpanded = expandedFoundation === resource._id;
+
+          return (
+            <article key={resource._id} className="student-recording-card">
+              <div className="student-recording-summary">
+                <div className="student-type-mark" style={{ background: `${typeInfo.color}15`, color: typeInfo.color }}>
+                  {typeInfo.icon}
+                </div>
+                <div className="student-recording-copy">
+                  <span>Foundation #{idx + 1} • {typeInfo.label}</span>
+                  <h3>{resource.title}</h3>
+                  {resource.description && <p>{resource.description}</p>}
+                </div>
+                <button className="btn btn-secondary btn-sm" onClick={() => setExpandedFoundation(isExpanded ? null : resource._id)}>
+                  {isExpanded ? 'Collapse' : 'Watch'}
+                </button>
+              </div>
+              {isExpanded && (
+                <div className="student-player-wrap">
+                  <RecordedLecturePlayer lecture={{ title: resource.title, videoUrl: resource.videoUrl, videoType: resource.videoType }} />
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </section>
+    </>
+  );
+
   const renderSettings = () => (
     <section className="student-settings-panel">
       <span className="student-eyebrow">Account</span>
@@ -1194,6 +1262,7 @@ export default function StudentDashboard() {
             {view === 'performance' && renderPerformance()}
             {view === 'certificates' && renderCertificates()}
             {view === 'assistant' && renderAssistant()}
+            {view === 'foundation' && renderFoundationBuildUp()}
             {view === 'settings' && renderSettings()}
           </div>
         )}
