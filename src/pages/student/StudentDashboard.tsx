@@ -29,6 +29,13 @@ interface FoundationResource {
   description: string;
   videoUrl: string;
   videoType: string;
+  playbackMode?: 'protected_stream' | 'blocked_external';
+  zoomSummary?: string;
+  zoomChapters?: { start: number; title: string; text: string }[];
+  zoomTranscript?: { start: number; speaker?: string; text: string }[];
+  zoomDownloadUrl?: string;
+  zoomShareUrl?: string;
+  zoomPlayUrl?: string;
   order: number;
 }
 
@@ -1183,7 +1190,7 @@ export default function StudentDashboard() {
               </div>
               {isExpanded && (
                 <div className="student-player-wrap">
-                  <RecordedLecturePlayer lecture={{ title: resource.title, videoUrl: resource.videoUrl, videoType: resource.videoType }} />
+                  <RecordedLecturePlayer lecture={resource} streamKind="foundation" />
                 </div>
               )}
             </article>

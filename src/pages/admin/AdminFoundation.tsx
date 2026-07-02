@@ -9,6 +9,13 @@ interface FoundationResource {
   description: string;
   videoUrl: string;
   videoType: string;
+  playbackMode?: 'protected_stream' | 'blocked_external';
+  zoomSummary?: string;
+  zoomChapters?: { start: number; title: string; text: string }[];
+  zoomTranscript?: { start: number; speaker?: string; text: string }[];
+  zoomDownloadUrl?: string;
+  zoomShareUrl?: string;
+  zoomPlayUrl?: string;
   order: number;
   createdAt: string;
 }
@@ -202,7 +209,7 @@ export default function AdminFoundation() {
               <h2>{playerResource.title}</h2>
               <button className="modal-close" onClick={() => setPlayerResource(null)}>✕</button>
             </div>
-            <RecordedLecturePlayer lecture={{ title: playerResource.title, videoUrl: playerResource.videoUrl, videoType: playerResource.videoType }} />
+            <RecordedLecturePlayer lecture={playerResource} streamKind="foundation" />
           </div>
         </div>
       )}

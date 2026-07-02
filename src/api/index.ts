@@ -82,6 +82,7 @@ export const recordedApi = {
 
 export const foundationApi = {
   getAll: () => api.get('/foundation'),
+  getStreamToken: (id: string) => api.post(`/foundation/${id}/stream-token`),
   create: (data: object) => api.post('/foundation', data),
   update: (id: string, data: object) => api.put(`/foundation/${id}`, data),
   delete: (id: string) => api.delete(`/foundation/${id}`),

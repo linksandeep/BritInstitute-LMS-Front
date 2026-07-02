@@ -1215,6 +1215,10 @@ tbody td {
   background: #05080f;
 }
 
+.recorded-player-video {
+  object-fit: contain;
+}
+
 .protected-player {
   -webkit-user-select: none;
   user-select: none;
@@ -1253,12 +1257,166 @@ tbody td {
   background: rgba(5, 8, 15, 0.76);
 }
 
+.recorded-player-error {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 8, 15, 0.86);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .recorded-player-empty {
   padding: 48px 20px;
   text-align: center;
   background: #05080f;
   color: #fff;
   border-radius: var(--radius);
+}
+
+.recorded-player-insights {
+  margin-top: 18px;
+  color: var(--text-primary);
+}
+
+.recorded-insight-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  background: #eef4fb;
+}
+
+.recorded-insight-tabs button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.recorded-insight-tabs button.active {
+  background: #ffffff;
+  color: var(--accent);
+  box-shadow: 0 6px 18px rgba(16, 35, 62, 0.1);
+}
+
+.recorded-insight-panel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(16, 35, 62, 0.06);
+  overflow: hidden;
+}
+
+.recorded-player-summary p {
+  margin: 0;
+  padding: 18px 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.recorded-chapter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.recorded-chapter-card {
+  min-height: 124px;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.recorded-chapter-card:hover,
+.recorded-chapter-card.active {
+  border-color: var(--accent);
+  background: rgba(42, 138, 246, 0.1);
+  box-shadow: 0 12px 28px rgba(42, 138, 246, 0.14);
+  transform: translateY(-1px);
+}
+
+.recorded-chapter-card span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recorded-chapter-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.recorded-chapter-card small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.recorded-transcript-list {
+  max-height: 340px;
+  overflow: auto;
+  padding: 8px;
+}
+
+.recorded-transcript-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+
+.recorded-transcript-row:hover,
+.recorded-transcript-row.active {
+  background: rgba(42, 138, 246, 0.1);
+}
+
+.recorded-transcript-row span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.recorded-transcript-row p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 @media (max-width: 1500px) {
@@ -1344,7 +1502,36 @@ tbody td {
 }
 
 .recorded-player-modal {
-  max-width: 960px;
+  width: min(1180px, calc(100vw - 48px));
+  max-width: min(1180px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.recorded-player-modal .modal-header {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.recorded-player-modal .modal-header h2 {
+  min-width: 0;
+  line-height: 1.25;
+}
+
+@media (max-width: 760px) {
+  .recorded-player-modal {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .recorded-chapter-list {
+    grid-template-columns: 1fr;
+  }
+
+  .recorded-transcript-row {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
 }
 
 /* ─── Student Portal ─────────────────────────────────────────────────────── */
