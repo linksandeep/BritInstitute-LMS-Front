@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, studentPortalApi, foundationApi } from '../../api';
+import { liveClassApi, recordedApi, assignmentApi, sessionApi, curriculumApi, studentPortalApi, foundationApi, studyMaterialApi } from '../../api';
 import BrandLogo from '../../components/BrandLogo';
 import RecordedLecturePlayer from '../../components/RecordedLecturePlayer';
 import ChangePasswordForm from '../../components/ChangePasswordForm';
 import { formatUkDate, formatUkDateTime, formatUkTime, toUkDateInputValue } from '../../utils/ukTime';
 
-type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'foundation' | 'settings';
+type MainView = 'dashboard' | 'curriculum' | 'sessions' | 'performance' | 'certificates' | 'assistant' | 'foundation' | 'study-materials' | 'settings';
 type DashboardTab = 'live' | 'assignments' | 'recorded';
 
 interface LiveClass {
@@ -37,6 +37,16 @@ interface FoundationResource {
   zoomShareUrl?: string;
   zoomPlayUrl?: string;
   order: number;
+}
+
+interface StudyMaterial {
+  _id: string;
+  title: string;
+  description: string;
+  materialUrl: string;
+  materialType: string;
+  order: number;
+  createdAt: string;
 }
 
 interface Assignment {
@@ -134,6 +144,16 @@ const VIDEO_TYPE_INFO: Record<string, { icon: string; label: string; color: stri
   other:       { icon: 'LN', label: 'External Link', color: '#7c3aed' },
 };
 
+const MATERIAL_TYPE_INFO: Record<string, { icon: string; label: string; color: string }> = {
+  drive:  { icon: 'DR', label: 'Google Drive', color: '#059669' },
+  pdf:    { icon: 'PDF', label: 'PDF', color: '#dc2626' },
+  doc:    { icon: 'DOC', label: 'Document', color: '#2563eb' },
+  slides: { icon: 'SL', label: 'Slides', color: '#d97706' },
+  sheet:  { icon: 'SH', label: 'Sheet', color: '#16a34a' },
+  link:   { icon: 'LN', label: 'Link', color: '#7c3aed' },
+  other:  { icon: 'OT', label: 'Other', color: '#64748b' },
+};
+
 const formatDateTime = (value: string) =>
   formatUkDateTime(value, {
     month: 'short',
@@ -170,6 +190,7 @@ export default function StudentDashboard() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [portalSummary, setPortalSummary] = useState<StudentPortalSummary | null>(null);
   const [foundationResources, setFoundationResources] = useState<FoundationResource[]>([]);
+  const [studyMaterials, setStudyMaterials] = useState<StudyMaterial[]>([]);
   const [portalError, setPortalError] = useState('');
 
   const [loading, setLoading] = useState(true);
@@ -204,7 +225,7 @@ export default function StudentDashboard() {
     if (!courseId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [lc, lv, as, bs, ms, curr, summary, foundation] = await Promise.all([
+      const [lc, lv, as, bs, ms, curr, summary, foundation, materials] = await Promise.all([
         liveClassApi.getMine(),
         recordedApi.getMine(),
         assignmentApi.getMine(),
@@ -213,6 +234,7 @@ export default function StudentDashboard() {
         curriculumApi.getMine().catch(() => ({ data: { curriculum: null } })),
         studentPortalApi.getSummary().catch(() => ({ data: { summary: null } })),
         foundationApi.getAll().catch(() => ({ data: { resources: [] } })),
+        studyMaterialApi.getAll().catch(() => ({ data: { materials: [] } })),
       ]);
       setLiveClasses(lc.data.liveClasses);
       setLectures(lv.data.lectures);
@@ -222,6 +244,7 @@ export default function StudentDashboard() {
       setCurriculum(curr.data.curriculum);
       setPortalSummary(summary.data.summary);
       setFoundationResources(foundation.data.resources || []);
+      setStudyMaterials(materials.data.materials || []);
       setPortalError(summary.data.summary ? '' : 'Some student insight widgets could not load from the backend.');
 
       const wt: Record<string, number> = {};
@@ -451,6 +474,7 @@ export default function StudentDashboard() {
     { id: 'certificates', code: 'CF', label: 'Certificates' },
     { id: 'assistant', code: 'AI', label: 'Study Assistant' },
     { id: 'foundation', code: 'FB', label: 'Foundation & Build-Up' },
+    { id: 'study-materials', code: 'SM', label: 'Study Material' },
     { id: 'settings', code: 'ST', label: 'Settings' },
   ];
 
@@ -1200,6 +1224,55 @@ export default function StudentDashboard() {
     </>
   );
 
+  const renderStudyMaterials = () => (
+    <>
+      <section className="student-page-hero">
+        <span className="student-eyebrow">Study Material</span>
+        <h1>Shared learning resources</h1>
+        <p>Open Drive files, documents, slides, sheets, and useful links shared by your institute team.</p>
+      </section>
+
+      <section className="student-section-panel">
+        <div className="student-section-head">
+          <div>
+            <span className="student-eyebrow">Resources</span>
+            <h2>Study material</h2>
+          </div>
+          <span className="student-pill primary">{studyMaterials.length} available</span>
+        </div>
+
+        {studyMaterials.length === 0 ? (
+          <div className="student-empty-panel embedded">
+            <div className="student-empty-mark">SM</div>
+            <h3>No study material yet</h3>
+            <p>Study links and files will appear here once your teacher or admin adds them.</p>
+          </div>
+        ) : (
+          <div className="student-material-grid">
+            {studyMaterials.map((material, idx) => {
+              const typeInfo = MATERIAL_TYPE_INFO[material.materialType] || MATERIAL_TYPE_INFO.other;
+              return (
+                <article key={material._id} className="student-material-card">
+                  <div className="student-type-mark" style={{ background: `${typeInfo.color}15`, color: typeInfo.color }}>
+                    {typeInfo.icon}
+                  </div>
+                  <div className="student-material-copy">
+                    <span>Material #{idx + 1} • {typeInfo.label}</span>
+                    <h3>{material.title}</h3>
+                    {material.description && <p>{material.description}</p>}
+                  </div>
+                  <a className="btn btn-primary btn-sm" href={material.materialUrl} target="_blank" rel="noreferrer">
+                    Open
+                  </a>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </>
+  );
+
   const renderSettings = () => (
     <section className="student-settings-panel">
       <span className="student-eyebrow">Account</span>
@@ -1270,6 +1343,7 @@ export default function StudentDashboard() {
             {view === 'certificates' && renderCertificates()}
             {view === 'assistant' && renderAssistant()}
             {view === 'foundation' && renderFoundationBuildUp()}
+            {view === 'study-materials' && renderStudyMaterials()}
             {view === 'settings' && renderSettings()}
           </div>
         )}

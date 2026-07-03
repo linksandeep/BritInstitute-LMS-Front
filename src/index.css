@@ -2176,6 +2176,47 @@ tbody td {
   margin-top: 18px;
 }
 
+.student-material-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.student-material-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(16, 35, 62, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 30px rgba(16, 35, 62, 0.06);
+}
+
+.student-material-copy {
+  min-width: 0;
+}
+
+.student-material-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-material-copy h3 {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.student-material-copy p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
 .student-assignment-card,
 .student-session-card {
   display: flex;
@@ -2610,6 +2651,7 @@ tbody td {
 
   .student-schedule-row,
   .student-recording-summary,
+  .student-material-card,
   .student-roadmap-item,
   .student-assignment-card,
   .student-session-card {

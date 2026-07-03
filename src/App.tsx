@@ -15,6 +15,7 @@ import AdminCourses from './pages/admin/AdminCourses';
 import AdminLiveClasses from './pages/admin/AdminLiveClasses';
 import AdminRecorded from './pages/admin/AdminRecorded';
 import AdminFoundation from './pages/admin/AdminFoundation';
+import AdminStudyMaterials from './pages/admin/AdminStudyMaterials';
 import AdminAssignments from './pages/admin/AdminAssignments';
 import AdminBatches from './pages/admin/AdminBatches';
 import AdminAppointments from './pages/admin/AdminAppointments';
@@ -82,6 +83,9 @@ function AppRoutes() {
       <Route path="/admin/foundation" element={
         <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminFoundation /></AdminShell></ProtectedRoute>
       } />
+      <Route path="/admin/study-materials" element={
+        <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminStudyMaterials /></AdminShell></ProtectedRoute>
+      } />
       <Route path="/admin/assignments" element={
         <ProtectedRoute roles={['admin', 'teacher', 'superadmin']}><AdminShell><AdminAssignments /></AdminShell></ProtectedRoute>
       } />
@@ -102,6 +106,7 @@ function AppRoutes() {
       <Route path="/teacher/live-classes" element={<Navigate to="/admin/live-classes" replace />} />
       <Route path="/teacher/recorded" element={<Navigate to="/admin/recorded" replace />} />
       <Route path="/teacher/foundation" element={<Navigate to="/admin/foundation" replace />} />
+      <Route path="/teacher/study-materials" element={<Navigate to="/admin/study-materials" replace />} />
       <Route path="/teacher/assignments" element={<Navigate to="/admin/assignments" replace />} />
       <Route path="/teacher/batches" element={<Navigate to="/admin/batches" replace />} />
       <Route path="/teacher/curriculum" element={<Navigate to="/admin/curriculum" replace />} />

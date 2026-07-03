@@ -88,6 +88,13 @@ export const foundationApi = {
   delete: (id: string) => api.delete(`/foundation/${id}`),
 };
 
+export const studyMaterialApi = {
+  getAll: (batch?: string) => api.get('/study-materials', { params: batch ? { batch } : undefined }),
+  create: (data: object) => api.post('/study-materials', data),
+  update: (id: string, data: object) => api.put(`/study-materials/${id}`, data),
+  delete: (id: string) => api.delete(`/study-materials/${id}`),
+};
+
 // Assignments
 export const assignmentApi = {
   getAll: (batch?: string) => api.get('/assignments', { params: batch ? { batch } : undefined }),
