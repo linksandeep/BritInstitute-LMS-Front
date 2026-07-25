@@ -31,19 +31,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside style={{
+    <div className="admin-shell" style={{ display: 'flex', minHeight: '100vh' }}>
+      <aside className="admin-sidebar" style={{
         width: '264px', minHeight: '100vh', background: 'linear-gradient(180deg, #f8fbff, #f2f7fd)',
         borderRight: '1px solid var(--border-subtle)', display: 'flex',
         flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
       }}>
-        <div style={{ padding: '24px 20px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div className="admin-sidebar-header" style={{ padding: '24px 20px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="soft-panel" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(29,155,240,0.12), rgba(58,183,255,0.04))' }}>
             <BrandLogo subtitle={workspaceLabel} />
           </div>
         </div>
 
-        <nav style={{ padding: '18px 12px', flex: 1 }}>
+        <nav className="admin-nav" style={{ padding: '18px 12px', flex: 1 }}>
           {showSuperAdminHome && (
             <Link
               to="/superadmin"
@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div style={{ padding: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div className="admin-sidebar-footer" style={{ padding: '16px', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="soft-panel" style={{ padding: '14px', marginBottom: '10px' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Signed in as</div>
             <div style={{ fontSize: '14px', fontWeight: '700' }}>{user?.name}</div>
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <main style={{ flex: 1, padding: '36px', minWidth: 0, overflowY: 'auto' }}>
+      <main className="admin-main" style={{ flex: 1, padding: '36px', minWidth: 0, overflowY: 'auto' }}>
         <div className="slide-in">{children}</div>
       </main>
 

@@ -149,8 +149,19 @@ export default function AdminBatches() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this batch? Students will be un-enrolled from its course.')) return;
-    await batchApi.delete(id);
-    await fetchAll();
+    const pin = window.prompt('Enter PIN to delete this batch');
+    if (pin === null) return;
+    if (pin.trim() !== '4545') {
+      window.alert('Incorrect PIN. Batch was not deleted.');
+      return;
+    }
+    try {
+      await batchApi.delete(id, pin.trim());
+      await fetchAll();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      window.alert(msg || 'Failed to delete batch');
+    }
   };
 
   const handleToggleActive = async (b: Batch) => {
@@ -223,7 +234,7 @@ export default function AdminBatches() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+        <div className="batch-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
           {batches.map(b => (
             <div key={b._id} className="card" style={{
               borderColor: b.isActive ? 'rgba(99,102,241,0.3)' : 'var(--border-subtle)',
@@ -249,14 +260,14 @@ export default function AdminBatches() {
                     {b.course?.title || '—'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                <div className="batch-date-row" style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
                   <span>📅 Start: {fmt(b.startDate)}</span>
                   {b.endDate && <span>🏁 End: {fmt(b.endDate)}</span>}
                 </div>
               </div>
 
               {/* Student Count */}
-              <div style={{
+              <div className="batch-student-summary" style={{
                 background: 'var(--bg-primary)', borderRadius: '8px', padding: '10px 14px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px',
               }}>
@@ -358,7 +369,7 @@ export default function AdminBatches() {
               </select>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="batch-date-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="form-group">
                 <label className="form-label">Start Date *</label>
                 <input
@@ -421,7 +432,7 @@ export default function AdminBatches() {
             {error && <div className="alert alert-error">⚠️ {error}</div>}
 
             {/* Add student row */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'flex-end' }}>
+            <div className="batch-student-add-row" style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'flex-end' }}>
               <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                 <label className="form-label">Add Student to Batch</label>
                 <select
@@ -459,7 +470,7 @@ export default function AdminBatches() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
                   {selected.students.map(s => (
-                    <div key={s._id} style={{
+                    <div key={s._id} className="batch-student-row" style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       background: 'var(--bg-primary)', borderRadius: '8px', padding: '10px 14px',
                       border: '1px solid var(--border-subtle)',

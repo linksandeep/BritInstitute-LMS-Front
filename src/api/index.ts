@@ -113,7 +113,7 @@ export const batchApi = {
   getOne: (id: string) => api.get(`/admin/batches/${id}`),
   create: (data: object) => api.post('/admin/batches', data),
   update: (id: string, data: object) => api.put(`/admin/batches/${id}`, data),
-  delete: (id: string) => api.delete(`/admin/batches/${id}`),
+  delete: (id: string, pin: string) => api.delete(`/admin/batches/${id}`, { data: { pin } }),
   addStudent: (batchId: string, studentId: string) =>
     api.post(`/admin/batches/${batchId}/students`, { studentId }),
   removeStudent: (batchId: string, studentId: string) =>
