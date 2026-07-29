@@ -7,12 +7,48 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+let licensePromptOpen = false;
+
 // Auto-attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('brit_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status;
+    const requestUrl = String(error?.config?.url || '');
+    if (status !== 423 || licensePromptOpen || requestUrl.includes('/license/')) {
+      return Promise.reject(error);
+    }
+
+    licensePromptOpen = true;
+    try {
+      const message = error?.response?.data?.message || 'License expired or invalid.';
+      const licenseKey = window.prompt(`${message}\n\nPlease enter the license key:`);
+      if (!licenseKey) return Promise.reject(error);
+
+      await axios.post(`${API_URL}/license/activate`, { licenseKey });
+      window.alert('License activated. The app will reload now.');
+      window.location.reload();
+      return Promise.reject(error);
+    } catch (activationError: unknown) {
+      const activationMessage = (activationError as { response?: { data?: { message?: string; license?: { message?: string } } } })?.response?.data;
+      window.alert(activationMessage?.license?.message || activationMessage?.message || 'License Invalid');
+      return Promise.reject(error);
+    } finally {
+      licensePromptOpen = false;
+    }
+  }
+);
+
+export const licenseApi = {
+  status: () => api.get('/license/status'),
+  activate: (licenseKey: string) => api.post('/license/activate', { licenseKey }),
+};
 
 // Auth
 export const authApi = {
